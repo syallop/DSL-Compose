@@ -6,6 +6,9 @@ module DSL.Program
 
 import DSL.Instruction
 
+import Control.Applicative
+import Control.Monad
+
 -- | Concrete representation of a monadic sequence of
 -- instructions.
 data MonadInstr i m a where
@@ -26,4 +29,11 @@ newtype Program i a = Program (MonadInstr i (Program i) a)
 instance Monad (Program i) where
   return   = Program . Return
   ma >>= f = Program $ Bind ma f
+
+instance Applicative (Program i) where
+  pure  = return
+  (<*>) = ap
+
+instance Functor (Program i) where
+  fmap = liftM
 
