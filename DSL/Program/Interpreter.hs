@@ -8,8 +8,12 @@
 module DSL.Program.Interpreter
   (Interpreter(..)
   ,Interpreters((:*:))
+
   ,interpretWith
   ,interpretProgramWith
+
+  ,interpretUsing
+  ,interpretProgramUsing
   ) where
 
 import DSL.Instruction
@@ -59,4 +63,35 @@ interpretProgramWith int (Program p) = case p of
   Return a -> return a
   Instr  i -> interpretWith int i
   Bind m f -> interpretProgramWith int m >>= interpretProgramWith int . f
+
+-- | Class of interpreter types 'int' which are defined on some instruction set
+-- 'i', and may be used to interpret a compatible instruction set 'i\',
+-- producing a corresponding 'm a'.
+class InterpretUsing int i i' m where
+  interpretUsing :: int i' m -> i p a -> m a
+
+-- When the interpreter directly corresponds to the language, delegate
+-- reducing complexity.
+instance InterpretWith int i m
+      => InterpretUsing int i i m where
+  interpretUsing = interpretWith
+
+-- Coerce the instruction type to that of the interpreter.
+instance (InterpretWith int i' m
+         ,i :<= i'
+         )
+        => InterpretUsing int i i' m where
+  interpretUsing int i = interpretWith int $ coerce i
+
+-- | Interpret a 'Program' using a compatible interpreter.
+interpretProgramUsing :: (InterpretUsing int i i' m
+                         ,Monad m
+                         )
+                        => int i' m
+                        -> Program i a
+                        -> m a
+interpretProgramUsing int (Program p) = case p of
+  Return a -> return a
+  Instr  i -> interpretUsing int i
+  Bind m f -> interpretProgramUsing int m >>= interpretProgramUsing int . f
 
