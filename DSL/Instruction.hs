@@ -1,11 +1,13 @@
 {-# LANGUAGE FlexibleInstances
-            , GADTs
-            , MultiParamTypeClasses
-            , TypeOperators
+           , GADTs
+           , MultiParamTypeClasses
+           , TypeOperators
+           , UndecidableInstances
   #-}
 module DSL.Instruction
   ( (:+:)(InjL,InjR) -- Instruction composition
   , (:<-)(inj)       -- Element instructions
+  , (:<=)(coerce)    -- Instruction containment
   ) where
 
 -- | Composition of two instruction types 'i' and 'j'
@@ -33,4 +35,23 @@ instance i :<- (i :+: i') where
 instance (i :<- i'')
       => i :<- (i' :+: i'') where
   inj = InjR . inj
+
+-- | Class of instruction containment.
+-- "The instruction types in 'i' are all contained in 'i\''".
+class i :<= i' where
+  coerce :: i p a -> i' p a
+
+-- A composition 'i' :+: 'j' is contained by 'i\''
+-- when both instructions are contained in 'i\''.
+instance (i :<- i'
+         ,j :<= i'
+         )
+        => (i :+: j) :<= i' where
+  coerce (InjL l) = inj l
+  coerce (InjR r) = coerce r
+
+-- Instruction 'i' is an element of 'i\''.
+instance (i :<- i')
+       => i :<= i' where
+  coerce i = inj i
 
