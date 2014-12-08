@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances
            , GADTs
            , MultiParamTypeClasses
+           , OverlappingInstances
            , PolyKinds
            , RankNTypes
            , TypeOperators

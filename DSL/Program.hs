@@ -8,6 +8,10 @@
 module DSL.Program
   ( Program(..)
   , MonadInstr(..)
+
+  , inject
+  , Compile(compile)
+  , ProgramUsing
   ) where
 
 import DSL.Instruction
