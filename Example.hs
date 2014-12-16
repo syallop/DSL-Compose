@@ -1,23 +1,29 @@
 {-# LANGUAGE FlexibleContexts
            , GADTs
            , PolyKinds
+           , TemplateHaskell
            , TypeOperators
   #-}
+{-# LANGUAGE RankNTypes #-}
 module Example where
 
 import DSL.Instruction
 import DSL.Program
 import DSL.Program.Interpreter
 
+import DSL.Program.Derive
+import Language.Haskell.TH
+
 -- | Some arithmetic operations
-data ArithOp (p :: * -> *) a where
+data ArithOp (p :: * -> *) (a :: *) where
   Add :: Int -> Int -> ArithOp p Int
   Mul :: Int -> Int -> ArithOp p Int
 -- promote arithmetic operations to program instructions
--- add :: Int -> Int -> ProgramUsing ArithOp Int
-add x y = inject $ Add x y
+{-add :: Int -> Int -> ProgramUsing ArithOp Int-}
+{-add x y = inject $ Add x y-}
 -- mul :: Int -> Int -> ProgramUsing ArithOp Int
-mul x y = inject $ Add x y
+{-mul x y = inject $ Add x y-}
+$(deriveInjections ''ArithOp)
 
 -- | Some IO operations
 data IOOp (p :: * -> *) a where
@@ -25,9 +31,10 @@ data IOOp (p :: * -> *) a where
   PutInt :: Int -> IOOp p ()
 -- promote io operations to program instructions
 --getInt :: ProgramUsing IOOp Int
-getInt = inject GetInt
+{-getInt = inject GetInt-}
 --putInt :: ProgramUsing IOOp ()
-putInt x = inject $ PutInt x
+{-putInt x = inject $ PutInt x-}
+$(deriveInjections ''IOOp)
 
 -- | Some nonsense operations
 data FooOp (p :: * -> *) a where
@@ -35,9 +42,10 @@ data FooOp (p :: * -> *) a where
   Bar :: FooOp p ()
   Baz :: FooOp p ()
 -- promote nonsense operations to program instructions
-foo = inject Foo :: ProgramUsing FooOp ()
-bar = inject Bar :: ProgramUsing FooOp ()
-baz = inject Baz :: ProgramUsing FooOp ()
+{-foo = inject Foo :: ProgramUsing FooOp ()-}
+{-bar = inject Bar :: ProgramUsing FooOp ()-}
+{-baz = inject Baz :: ProgramUsing FooOp ()-}
+$(deriveInjections ''FooOp)
 
 -- | Example Program type, composing three instruction types.
 type MyProgram a = Program (ArithOp :+: IOOp :+: FooOp) a
