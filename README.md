@@ -50,6 +50,18 @@ putBool b = inject $ PutBool b
 etc.
 In most cases type signatures can be omitted.
 
+Alternatively “DSL.Program.Derive” can be used to derive these injection functions
+using template haskell:
+
+```
+$(deriveInjections ‘’ArithOp)
+
+...
+
+$(deriveInjections ‘’IOOp)
+
+```
+
 ###Composing DSL’s
 Instruction types are composed with ‘:+:’, and ‘Program’ wraps instructions compositions
 with the capability to be used as a monadic sequence of instructions.
