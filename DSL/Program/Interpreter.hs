@@ -10,9 +10,11 @@ module DSL.Program.Interpreter
   (Interpreter(..)
   ,Interpreters((:*:))
 
+  ,InterpretWith
   ,interpretWith
   ,interpretProgramWith
 
+  ,InterpretUsing
   ,interpretUsing
   ,interpretProgramUsing
   ) where
