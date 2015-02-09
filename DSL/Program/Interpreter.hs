@@ -22,9 +22,9 @@ module DSL.Program.Interpreter
 import DSL.Instruction
 import DSL.Program
 
--- | An Interpreter interprets instructions (with any base program type)
+-- | An Interpreter interprets instructions
 -- , producing a result in 'm'.
-newtype Interpreter i m = Interpreter {unInterpreter :: forall a p. i p a -> m a}
+newtype Interpreter i m = Interpreter {unInterpreter :: forall a. i a -> m a}
 
 -- | Composition of interpreters.
 data Interpreters i m where
@@ -33,6 +33,7 @@ data Interpreters i m where
         -> int i' m
         -> Interpreters (i :+: i') m
 infixr :*:
+
 
 -- | Class of interpreter types 'int' which can be used to interpret
 -- an instruction type 'i' producing a corresponding 'm a'.
@@ -45,7 +46,7 @@ infixr :*:
 -- I.E. The interpreter type must compose in the same order and be of the same size
 -- as the instruction type.
 class InterpretWith int i m where
-  interpretWith :: int i m -> i p a -> m a
+  interpretWith :: int i m -> i a -> m a
 
 instance InterpretWith Interpreters i m where
   interpretWith ((Interpreter int) :*: int') i = case i of
@@ -62,16 +63,17 @@ interpretProgramWith :: (InterpretWith int i m
                      => int i m
                      -> Program i a
                      -> m a
-interpretProgramWith int (Program p) = case p of
+interpretProgramWith int p = case p of
   Return a -> return a
   Instr  i -> interpretWith int i
   Bind m f -> interpretProgramWith int m >>= interpretProgramWith int . f
+
 
 -- | Class of interpreter types 'int' which are defined on some instruction set
 -- 'i', and may be used to interpret a compatible instruction set 'i\',
 -- producing a corresponding 'm a'.
 class InterpretUsing int i i' m where
-  interpretUsing :: int i' m -> i p a -> m a
+  interpretUsing :: int i' m -> i a -> m a
 
 -- When the interpreter directly corresponds to the language, delegate
 -- reducing complexity.
@@ -87,14 +89,12 @@ instance (InterpretWith int i' m
   interpretUsing int i = interpretWith int $ coerce i
 
 -- | Interpret a 'Program' using a compatible interpreter.
-interpretProgramUsing :: (InterpretUsing int i i' m
+interpretProgramUsing :: (i :<= i'
+                         ,InterpretWith int i' m
                          ,Monad m
                          )
-                        => int i' m
-                        -> Program i a
-                        -> m a
-interpretProgramUsing int (Program p) = case p of
-  Return a -> return a
-  Instr  i -> interpretUsing int i
-  Bind m f -> interpretProgramUsing int m >>= interpretProgramUsing int . f
+                      => int i' m
+                      -> Program i a
+                      -> m a
+interpretProgramUsing int p = interpretProgramWith int $ coerceProgram p
 

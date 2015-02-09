@@ -65,8 +65,7 @@ validDeclaration _ = fail "Non GADT types not supported"
 
 -- | Two type variables which all of our instruction types must have.
 data InstrTyVars = InstrTyVars
-  {_instrProgramTyVar :: Name -- ^ Name of composite program type.
-  ,_instrReturnTyVar  :: Name -- ^ Name of return type.
+  {_instrReturnTyVar :: Name -- ^ Name of return type.
   }
 
 -- | Represents information about an instruction set like type 
@@ -121,26 +120,19 @@ extractInstrInfo c = case c of
 -- Succeeds only with two type variables kinded:
 -- (prog :: * -> *) (ret :: *)
 extractInstrTyVars :: [TyVarBndr] -> Q InstrTyVars
-extractInstrTyVars [prog,ret]
-    | not $ validProgramTyVar = fail "Program TyVar (first type) must have kind * -> *"
-    | not $ validReturnTyVar  = fail "Return TyVar (second type) must have kind *"
-    | otherwise = return $ InstrTyVars (tyVarBndrName prog) (tyVarBndrName ret)
+extractInstrTyVars [ret]
+    | not $ validReturnTyVar  = fail "Return TyVar must have kind *"
+    | otherwise = return $ InstrTyVars $ tyVarBndrName ret
   where
     validReturnTyVar = case ret of
       PlainTV name        -> True
       KindedTV name StarT -> True
       _                   -> False
 
-    validProgramTyVar = case prog of
-      KindedTV name (AppT (AppT ArrowT StarT) StarT)
-        -> True
-
-      _ -> False
-
     tyVarBndrName t = case t of
       PlainTV  n   -> n
       KindedTV n _ -> n
-extractInstrTyVars _ = fail "instruction set must be kinded '(* -> *) -> *'"
+extractInstrTyVars _ = fail "instruction set must be kinded '* -> *'"
 
 -- | Generate the function and type signature of an injection function
 -- for a instruction within some instruction set.

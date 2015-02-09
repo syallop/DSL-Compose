@@ -15,9 +15,9 @@ import DSL.Program.Derive
 import Language.Haskell.TH
 
 -- | Some arithmetic operations
-data ArithOp (p :: * -> *) (a :: *) where
-  Add :: Int -> Int -> ArithOp p Int
-  Mul :: Int -> Int -> ArithOp p Int
+data ArithOp (a :: *) where
+  Add :: Int -> Int -> ArithOp Int
+  Mul :: Int -> Int -> ArithOp Int
 -- promote arithmetic operations to program instructions
 {-add :: Int -> Int -> ProgramUsing ArithOp Int-}
 {-add x y = inject $ Add x y-}
@@ -26,9 +26,9 @@ data ArithOp (p :: * -> *) (a :: *) where
 $(deriveInjections ''ArithOp)
 
 -- | Some IO operations
-data IOOp (p :: * -> *) a where
-  GetInt :: IOOp p Int
-  PutInt :: Int -> IOOp p ()
+data IOOp a where
+  GetInt :: IOOp Int
+  PutInt :: Int -> IOOp ()
 -- promote io operations to program instructions
 --getInt :: ProgramUsing IOOp Int
 {-getInt = inject GetInt-}
@@ -37,10 +37,10 @@ data IOOp (p :: * -> *) a where
 $(deriveInjections ''IOOp)
 
 -- | Some nonsense operations
-data FooOp (p :: * -> *) a where
-  Foo :: FooOp p ()
-  Bar :: FooOp p ()
-  Baz :: FooOp p ()
+data FooOp a where
+  Foo :: FooOp ()
+  Bar :: FooOp ()
+  Baz :: FooOp ()
 -- promote nonsense operations to program instructions
 {-foo = inject Foo :: ProgramUsing FooOp ()-}
 {-bar = inject Bar :: ProgramUsing FooOp ()-}
@@ -103,7 +103,7 @@ interpreter2 = exFooInterpreter :*: exArithInterpreter :*: exIOInterpreter
 testExample2 = interpretProgramUsing interpreter2 exProgram
 
 -- | An empty instruction type
-data EmptyInst p a
+data EmptyInst a
 
 -- | An empty interpreter
 exEmptyInterpreter :: Interpreter EmptyInst IO

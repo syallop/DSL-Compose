@@ -15,15 +15,15 @@ module DSL.Instruction
 -- | Composition of two instruction types 'i' and 'j'
 -- , both parameterised over a common base program type 'p'
 -- returning a result type 'a'.
-data (i :+: j) p a where
-  InjL :: i p a -> (i :+: j) p a
-  InjR :: j p a -> (i :+: j) p a
+data (i :+: j) a where
+  InjL :: i a -> (i :+: j) a
+  InjR :: j a -> (i :+: j) a
 infixr :+:
 
 -- | Class of sub-instructions.
 -- 'i' is/ is contained within 'i\''.
 class i :<- i' where
-  inj :: i p a -> i' p a -- ^ Inject a term in 'i' into a term in 'i\''.
+  inj :: i a -> i' a -- ^ Inject a term in 'i' into a term in 'i\''.
 
 -- Instructions are trivially themselves
 instance i :<- i where
@@ -41,7 +41,7 @@ instance (i :<- i'')
 -- | Class of instruction containment.
 -- "The instruction types in 'i' are all contained in 'i\''".
 class i :<= i' where
-  coerce :: i p a -> i' p a
+  coerce :: i a -> i' a
 
 -- A composition 'i' :+: 'j' is contained by 'i\''
 -- when both instructions are contained in 'i\''.
