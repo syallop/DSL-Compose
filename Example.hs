@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts
            , GADTs
+           , LambdaCase
            , PolyKinds
            , TemplateHaskell
            , TypeOperators
@@ -74,19 +75,19 @@ exProgram = do
 
 -- | An example interpreter for ArithOp's, producing a result in IO
 exArithInterpreter :: Interpreter ArithOp IO
-exArithInterpreter = Interpreter $ \i -> case i of
+exArithInterpreter = \case
   Add x y -> return $ x + y
   Mul x y -> return $ x * y
 
 -- | An example interpreter for IOOp's, producing a result in IO.
 exIOInterpreter :: Interpreter IOOp IO
-exIOInterpreter = Interpreter $ \i -> case i of
+exIOInterpreter = \case
   GetInt   -> getLine >>= return . read
   PutInt i -> print i
 
 -- | An example interpreter for FooOp's, producing a result in IO.
 exFooInterpreter :: Interpreter FooOp IO
-exFooInterpreter = Interpreter $ \i -> case i of
+exFooInterpreter = \case
   Foo -> putStrLn "Foo"
   Bar -> putStrLn "Bar"
   Baz -> putStrLn "Baz"
@@ -94,27 +95,27 @@ exFooInterpreter = Interpreter $ \i -> case i of
 
 -- | A valid composite interpreter for 'exProgram', composing interpreters in
 -- the same order as the program instruction composition order.
-interpreter1 = exArithInterpreter :*: exIOInterpreter :*: exFooInterpreter
-testExample1 = interpretProgramUsing interpreter1 exProgram
+interpreter1 = exArithInterpreter & exIOInterpreter & exFooInterpreter
+testExample1 = interpretUsing interpreter1 exProgram
 
 -- | A valid composite interpreter for 'exProgram', composing interpreters in
 -- a different order as the program instruction composition order.
-interpreter2 = exFooInterpreter :*: exArithInterpreter :*: exIOInterpreter
-testExample2 = interpretProgramUsing interpreter2 exProgram
+interpreter2 = exFooInterpreter & exArithInterpreter & exIOInterpreter
+testExample2 = interpretUsing interpreter2 exProgram
 
 -- | An empty instruction type
 data EmptyInst a
 
 -- | An empty interpreter
 exEmptyInterpreter :: Interpreter EmptyInst IO
-exEmptyInterpreter = Interpreter undefined
+exEmptyInterpreter = const undefined
 
 -- | A valid composite interpreter for 'exProgram', composing interpreters in
 -- a different order as the program composition order, and including an
 -- extraneous interpreter.
 interpreter3 = exArithInterpreter
-                :*: exEmptyInterpreter
-                :*: exFooInterpreter
-                :*: exIOInterpreter
-testExample3 = interpretProgramUsing interpreter3 exProgram
+             & exEmptyInterpreter
+             & exFooInterpreter
+             & exIOInterpreter
+testExample3 = interpretUsing interpreter3 exProgram
 

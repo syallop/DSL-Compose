@@ -12,20 +12,20 @@ We define three separate DSL’s, one each responsible for arithmetic operations
 , boolean operations and IO operations.
 
 ```haskell
-data ArithOp (prog :: * -> *) ret where
-    Add :: Int -> Int -> ArithOp p Int
-    Mul :: Int -> Int -> ArithOp p Int
+data ArithOp ret where
+    Add :: Int -> Int -> ArithOp Int
+    Mul :: Int -> Int -> ArithOp Int
 
-data BoolOp (prog :: * -> *) ret where
-    And :: Bool -> Bool -> BoolOp p Bool
-    Or  :: Bool -> Bool -> BoolOp p Bool
-    Not :: Bool -> BoolOp p Bool
+data BoolOp ret where
+    And :: Bool -> Bool -> BoolOp Bool
+    Or  :: Bool -> Bool -> BoolOp Bool
+    Not :: Bool -> BoolOp Bool
 
-data IOOp (prog :: * -> *) ret where
-    GetInt  :: IOOp p Int
-    PutInt  :: Int -> IOOp p ()
-    GetBool :: IOOp p Bool
-    PutBool :: Bool -> IOOp p ()
+data IOOp ret where
+    GetInt  :: IOOp Int
+    PutInt  :: Int -> IOOp ()
+    GetBool :: IOOp Bool
+    PutBool :: Bool -> IOOp ()
 ```
 
 We can then mechanically define functions to inject each instruction into
@@ -96,33 +96,43 @@ exProgram = do
 We can write interpreters for Instruction types like:
 ```haskell
 exArithInterpreter :: Interpreter ArithOp IO
-exArithInterpreter = Interpreter $ \inst -> case inst of
+exArithInterpreter = \case
     Add x y -> return $ x + y
     Mul x y -> return $ x + y
 
 ...
 
 exIOInterpreter :: Interpreter IOOp IO
-exIOInterpreter = Interpreter $ \inst -> case inst of
+exIOInterpreter = \case
     GetInt   -> getLine >>= return . read
     PutInt i -> print i
     ...
 ```
 
+(Note -XLambdaCase provides the syntax
+```haskell
+\case
+```
+which desugars to
+```haskell
+‘\freshName -> case freshName of’
+```
+)
+
 ###Composing Interpreters
 ####Precisely
-We can compose interpreters with ‘:*:’ to produce an interpreter which
+We can compose interpreters with ‘&’ to produce an interpreter which
 can interpret both instruction types.
 
-A function named ‘interpretWith’/’interpretProgramWith’ will run a composite
+A function named ‘interpret’ will run a composite
 interpreter on a program with an identical composition structure.
 
 E.G. the ‘exProgram’ example could be interpreted:
 ```haskell
-exInterpreter =  exArithInterpreter
-             :*: exBoolInterpreter
-             :*: exIOInterpreter
-main = interpretProgramWith exInterpreter exProgram
+exInterpreter = exArithInterpreter
+              & exBoolInterpreter
+              & exIOInterpreter
+main = interpret exInterpreter exProgram
 ```
 Running:
 ```haskell
@@ -137,25 +147,25 @@ Running:
 Finally - and the main extension of the code - is the ability to explicitly interpret programs
 with compatible (but not structurally identical) intepreter compositions.
 
-‘interpretUsing’/’interpretProgramUsing’ impliment this functionality and can therefore be used on
+‘interpretUsing’ implements this functionality and can therefore be used on
 compositions which:
 - Are in a different order to the languages.
 - Are composed with interpreters the language does not use.
 
-For example, the following could be used with ‘interpretProgramUsing’:
+For example, the following could be used with ‘interpretUsing’:
 
 ```haskell
 -- Different order
-exInterpreter1 =  exIOInterpreter
-              :*: exArithInterpreter
-              :*: exBoolInterpreter
+exInterpreter1 = exIOInterpreter
+               & exArithInterpreter
+               & exBoolInterpreter
 
 -- Unused interpreters + different order
 exInterpreter2 = exFooInterpreter
-              :*: exBoolInterpreter
-              :*: exIOInterpreter
-              :*: exArithInterpreter
-              :*: exBarInterpreter
+               & exBoolInterpreter
+               & exIOInterpreter
+               & exArithInterpreter
+               & exBarInterpreter
 ```
 
 ##Citations
