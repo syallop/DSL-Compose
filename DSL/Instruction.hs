@@ -3,6 +3,7 @@
            , MultiParamTypeClasses
            , OverlappingInstances
            , PolyKinds
+           , RankNTypes
            , TypeOperators
            , UndecidableInstances
   #-}
@@ -10,6 +11,8 @@ module DSL.Instruction
   ( (:+:)(InjL,InjR) -- Instruction composition
   , (:<-)(inj)       -- Element instructions
   , (:<=)(coerce)    -- Instruction containment
+
+  , MapProgram(mapProgram)
   ) where
 
 -- | Composition of two instruction types 'i' and 'j'
@@ -56,4 +59,15 @@ instance (i :<- i'
 instance (i :<- i')
        => i :<= i' where
   coerce i = inj i
+
+-- | Class of instruction types 'i' whose base program type can
+-- be mapped to another program type.
+class MapProgram i where
+  mapProgram :: (forall b. p b -> p' b) -> i p a -> i p' a
+
+instance (MapProgram i, MapProgram j)
+      => MapProgram (i :+: j) where
+  mapProgram f p = case p of
+    InjL l -> InjL $ mapProgram f l
+    InjR r -> InjR $ mapProgram f r
 

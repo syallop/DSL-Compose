@@ -25,6 +25,11 @@ data ArithOp (p :: * -> *) a where
 -- mul :: Int -> Int -> ProgramUsing ArithOp Int
 {-mul x y = inject $ Add x y-}
 $(deriveInjections ''ArithOp)
+instance MapProgram ArithOp where
+  mapProgram f = \case
+    Add x y -> Add x y
+    Mul x y -> Mul x y
+
 
 -- | Some IO operations
 data IOOp (p :: * -> *) a where
@@ -36,6 +41,10 @@ data IOOp (p :: * -> *) a where
 --putInt :: ProgramUsing IOOp ()
 {-putInt x = inject $ PutInt x-}
 $(deriveInjections ''IOOp)
+instance MapProgram IOOp where
+  mapProgram _ = \case
+    GetInt   -> GetInt
+    PutInt x -> PutInt x
 
 -- | Some nonsense operations
 data FooOp (p :: * -> *) a where
@@ -47,9 +56,23 @@ data FooOp (p :: * -> *) a where
 {-bar = inject Bar :: ProgramUsing FooOp ()-}
 {-baz = inject Baz :: ProgramUsing FooOp ()-}
 $(deriveInjections ''FooOp)
+instance MapProgram FooOp where
+  mapProgram _ = \case
+    Foo -> Foo
+    Bar -> Bar
+    Baz -> Baz
 
 -- | Example Program type, composing three instruction types.
 type MyProgram a = Program (ArithOp :+: IOOp :+: FooOp) a
+
+-- | An example program based only upon the IOOp instruction type.
+-- Requests and returns a tuple of three Ints.
+getThreeInts :: Program IOOp (Int,Int,Int)
+getThreeInts = do
+  x <- getInt
+  y <- getInt
+  z <- getInt
+  return (x,y,z)
 
 -- | An example 'Program' monadically using three composed instruction types
 --
@@ -59,9 +82,7 @@ type MyProgram a = Program (ArithOp :+: IOOp :+: FooOp) a
 -- - put (x+y)*z
 exProgram :: MyProgram ()
 exProgram = do
-  x <- getInt
-  y <- getInt
-  z <- getInt
+  (x,y,z) <- embed getThreeInts
 
   foo
   bar

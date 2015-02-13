@@ -1,15 +1,21 @@
 {-# LANGUAGE FlexibleContexts
+           , FlexibleInstances
            , GADTs
+           , GeneralizedNewtypeDeriving
+           , LambdaCase
+           , MultiParamTypeClasses
            , PolyKinds
            , RankNTypes
            , TypeOperators
            , UndecidableInstances
   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module DSL.Program
   ( Program(..)
   , ProgramInstr(..)
 
   , inject
+  , embed
   , Compile(compile)
   , ProgramUsing
   ) where
@@ -19,8 +25,9 @@ import DSL.Instruction
 import Control.Applicative
 import Control.Monad
 
--- | A Program is a sequence of instructions from 'i' which can
+-- | A ProgramInstr is a sequence of instructions from 'i' which can
 -- be interpreted to produce some return value 'a'.
+-- 'p' gives the base program type.
 data ProgramInstr i p a where
 
   -- | Insert an instruction into the context.
@@ -32,6 +39,19 @@ data ProgramInstr i p a where
   -- | Monadic bind.
   Bind   :: p a -> (a -> p b) -> ProgramInstr i p b
 
+-- how to change a ProgramInstr's underlying base program type.
+instance MapProgram i
+      => MapProgram (ProgramInstr i) where
+  mapProgram f i = case i of
+    Instr  i  -> Instr $ mapProgram f i
+    Return a  -> Return a
+    Bind p fp -> Bind (f p) (\a -> f (fp a))
+
+-- | A Program is a sequence of instructions from 'i' which can be interpreted to
+-- produce some return value 'a'.
+--
+-- (The base program-type fed to all contained instructions is, recursivly, the 'Program i' itself.
+-- Therefore 'Program i's instructions may contain and operate on other 'Program i's.)
 newtype Program i a = Program (ProgramInstr i (Program i) a)
 
 instance Monad (Program i) where
@@ -50,7 +70,18 @@ instance Functor (Program i) where
 inject :: (i :<- i') => i (Program i') a -> Program i' a
 inject = Program . Instr . inj
 
-
+-- | Embed a 'Program' on an instruction type into a program on a
+-- larger/ compatible instruction type.
+embed :: (i :<= j, MapProgram j) => Program i a -> Program j a
+embed (Program p) = Program $ mapProgram embed $ case p of
+  Instr i   -> Instr (coerce i)
+  Return a  -> Return a
+  Bind ma f -> Bind ma f
+-- OR:
+{-embed (Program i) = Program $ case i of-}
+  {-Instr  i  -> Instr $ mapProgram embed (coerce i)-}
+  {-Return a  -> Return a-}
+  {-Bind ma f -> Bind (embed ma) (\a -> embed $ f a)-}
 
 
 -- | Type of 'Program's that may use an instruction type 'i' as part
