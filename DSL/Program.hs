@@ -72,16 +72,14 @@ inject = Program . Instr . inj
 
 -- | Embed a 'Program' on an instruction type into a program on a
 -- larger/ compatible instruction type.
-embed :: (i :<= j, MapProgram j) => Program i a -> Program j a
-embed (Program p) = Program $ mapProgram embed $ case p of
+--
+-- The smaller instruction type must know how to transform its uses
+-- of its base program type with a MapProgram instance.
+embed :: (i :<= j, MapProgram i) => Program i a -> Program j a
+embed (Program p) = Program $ case mapProgram embed p of
   Instr i   -> Instr (coerce i)
   Return a  -> Return a
   Bind ma f -> Bind ma f
--- OR:
-{-embed (Program i) = Program $ case i of-}
-  {-Instr  i  -> Instr $ mapProgram embed (coerce i)-}
-  {-Return a  -> Return a-}
-  {-Bind ma f -> Bind (embed ma) (\a -> embed $ f a)-}
 
 
 -- | Type of 'Program's that may use an instruction type 'i' as part
