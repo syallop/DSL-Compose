@@ -12,20 +12,20 @@ We define three separate DSL’s, one each responsible for arithmetic operations
 , boolean operations and IO operations.
 
 ```haskell
-data ArithOp ret where
-    Add :: Int -> Int -> ArithOp Int
-    Mul :: Int -> Int -> ArithOp Int
+data ArithOp (prog :: * -> *) ret where
+    Add :: Int -> Int -> ArithOp p Int
+    Mul :: Int -> Int -> ArithOp p Int
 
-data BoolOp ret where
-    And :: Bool -> Bool -> BoolOp Bool
-    Or  :: Bool -> Bool -> BoolOp Bool
-    Not :: Bool -> BoolOp Bool
+data BoolOp (prog :: * -> *) ret where
+    And :: Bool -> Bool -> BoolOp p Bool
+    Or  :: Bool -> Bool -> BoolOp p Bool
+    Not :: Bool -> BoolOp p Bool
 
-data IOOp ret where
-    GetInt  :: IOOp Int
-    PutInt  :: Int -> IOOp ()
-    GetBool :: IOOp Bool
-    PutBool :: Bool -> IOOp ()
+data IOOp (prog :: * -> *) ret where
+    GetInt  :: IOOp p Int
+    PutInt  :: Int -> IOOp p ()
+    GetBool :: IOOp p Bool
+    PutBool :: Bool -> IOOp p ()
 ```
 
 We can then mechanically define functions to inject each instruction into

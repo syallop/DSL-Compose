@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts
            , GADTs
+           , KindSignatures
            , LambdaCase
-           , PolyKinds
            , TemplateHaskell
            , TypeOperators
   #-}
@@ -16,9 +16,9 @@ import DSL.Program.Derive
 import Language.Haskell.TH
 
 -- | Some arithmetic operations
-data ArithOp (a :: *) where
-  Add :: Int -> Int -> ArithOp Int
-  Mul :: Int -> Int -> ArithOp Int
+data ArithOp (p :: * -> *) a where
+  Add :: Int -> Int -> ArithOp p Int
+  Mul :: Int -> Int -> ArithOp p Int
 -- promote arithmetic operations to program instructions
 {-add :: Int -> Int -> ProgramUsing ArithOp Int-}
 {-add x y = inject $ Add x y-}
@@ -27,9 +27,9 @@ data ArithOp (a :: *) where
 $(deriveInjections ''ArithOp)
 
 -- | Some IO operations
-data IOOp a where
-  GetInt :: IOOp Int
-  PutInt :: Int -> IOOp ()
+data IOOp (p :: * -> *) a where
+  GetInt :: IOOp p Int
+  PutInt :: Int -> IOOp p ()
 -- promote io operations to program instructions
 --getInt :: ProgramUsing IOOp Int
 {-getInt = inject GetInt-}
@@ -38,10 +38,10 @@ data IOOp a where
 $(deriveInjections ''IOOp)
 
 -- | Some nonsense operations
-data FooOp a where
-  Foo :: FooOp ()
-  Bar :: FooOp ()
-  Baz :: FooOp ()
+data FooOp (p :: * -> *) a where
+  Foo :: FooOp p ()
+  Bar :: FooOp p ()
+  Baz :: FooOp p ()
 -- promote nonsense operations to program instructions
 {-foo = inject Foo :: ProgramUsing FooOp ()-}
 {-bar = inject Bar :: ProgramUsing FooOp ()-}
@@ -104,7 +104,7 @@ interpreter2 = exFooInterpreter & exArithInterpreter & exIOInterpreter
 testExample2 = interpretUsing interpreter2 exProgram
 
 -- | An empty instruction type
-data EmptyInst a
+data EmptyInst (p :: * -> *) a
 
 -- | An empty interpreter
 exEmptyInterpreter :: Interpreter EmptyInst IO

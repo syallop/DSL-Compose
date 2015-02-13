@@ -7,11 +7,11 @@
   #-}
 module DSL.Program
   ( Program(..)
+  , ProgramInstr(..)
 
   , inject
   , Compile(compile)
   , ProgramUsing
-  , coerceProgram
   ) where
 
 import DSL.Instruction
@@ -21,20 +21,22 @@ import Control.Monad
 
 -- | A Program is a sequence of instructions from 'i' which can
 -- be interpreted to produce some return value 'a'.
-data Program i a where
+data ProgramInstr i p a where
 
   -- | Insert an instruction into the context.
-  Instr  :: i a -> Program i a
+  Instr  :: i p a -> ProgramInstr i p a
 
   -- | Monadic return.
-  Return :: a -> Program i a
+  Return :: a -> ProgramInstr i p a
 
   -- | Monadic bind.
-  Bind   :: Program i a -> (a -> Program i b) -> Program i b
+  Bind   :: p a -> (a -> p b) -> ProgramInstr i p b
+
+newtype Program i a = Program (ProgramInstr i (Program i) a)
 
 instance Monad (Program i) where
-  return     = Return
-  ia >>= fab = Bind ia fab
+  return     = Program . Return
+  ia >>= fab = Program $ Bind ia fab
 
 instance Applicative (Program i) where
   pure = return
@@ -43,22 +45,13 @@ instance Applicative (Program i) where
 instance Functor (Program i) where
   fmap = liftM
 
+
 -- | Inject an instruction into a program containing that instruction type.
-inject :: (i :<- i') => i a -> Program i' a
-inject = Instr . inj
+inject :: (i :<- i') => i (Program i') a -> Program i' a
+inject = Program . Instr . inj
 
--- | Coerce a 'Program' on an instruction type into a program
--- on a larger/ compatible instruction type.
-coerceProgram :: (i :<= j) => Program i a -> Program j a
-coerceProgram i = case i of
-  Return a
-    -> Return a
 
-  Bind ma f
-    -> Bind (coerceProgram ma) (coerceProgram . f)
 
-  Instr i
-    -> Instr $ coerce i
 
 -- | Type of 'Program's that may use an instruction type 'i' as part
 -- of their instruction-set.
@@ -71,16 +64,21 @@ class Compile t where
 
 -- Instruction compositions can be compiled when each composed instruction type
 -- can be compiled.
-instance (Compile i
-         ,Compile j
+instance (Compile (i p)
+         ,Compile (j p)
          ) =>
-         Compile (i :+: j) where
+         Compile ((i :+: j) p) where
     compile (InjL l) = compile l
     compile (InjR r) = compile r
 
-instance Compile i => Compile (Program i) where
+instance (Compile (i p), Compile p)
+      => Compile (ProgramInstr i p) where
   compile is = case is of
       Instr i  -> compile i
       Return a -> a
-      Bind m f -> compile $ f $ compile m 
+      Bind m f -> compile $ f $ compile m
+
+instance Compile (i (Program i))
+      => Compile (Program i) where
+  compile (Program p) = compile p
 

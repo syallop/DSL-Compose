@@ -1,4 +1,5 @@
-{-# LANGUAGE RankNTypes
+{-# LANGUAGE PolyKinds
+           , RankNTypes
            , TypeOperators
   #-}
 module DSL.Program.Interpreter
@@ -13,7 +14,7 @@ import DSL.Program
 
 -- | An Interpreter is a function which takes an instruction 'i a'
 -- and produces some value 'm a'.
-type Interpreter i m = forall a. i a -> m a
+type Interpreter i m = forall p a. i p a -> m a
 
 -- | Compose two Interpreters on instruction types 'i' and 'j' respectivly into an Interpreter
 -- which handles the composed Instruction type 'i :+: j'.
@@ -31,7 +32,7 @@ infixr &
 
 -- | Interpret a Program with an identically shaped Interpreter.
 interpret :: Monad m => Interpreter i m -> Program i a -> m a
-interpret int p = case p of
+interpret int (Program p) = case p of
   Return a -> return a
   Instr  i -> int i
   Bind m f -> interpret int m >>= interpret int . f
