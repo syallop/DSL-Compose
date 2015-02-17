@@ -10,7 +10,7 @@ name:                DSL-Compose
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.3.0.0
+version:             0.4.0.0
 
 -- A short (one-line) description of the package.
 -- synopsis:            
@@ -48,7 +48,11 @@ cabal-version:       >=1.10
 
 library
   -- Modules exported by the library.
-  exposed-modules:     DSL.Instruction, DSL.Program, DSL.Program.Interpreter, DSL.Program.Derive, Example
+  exposed-modules:     DSL.Instruction
+                     , DSL.Program
+                     , DSL.Program.Interpreter
+                     , DSL.Program.Derive
+                     , Example
   
   -- Modules included in this library but not exported.
   -- other-modules:       
