@@ -4,6 +4,8 @@
   #-}
 module DSL.Program.Interpreter
   ( Interpreter
+  , InterpreterOn
+
   , composeInterpreter, (&)
   , interpret
   , interpretUsing
@@ -12,9 +14,20 @@ module DSL.Program.Interpreter
 import DSL.Instruction
 import DSL.Program
 
--- | An Interpreter is a function which takes an instruction 'i a'
--- and produces some value 'm a'.
-type Interpreter i m = forall p a. (forall b. p b -> m b) -> i p a -> m a
+-- | And Interpreter is a function which takes a function for
+-- interpreting base-program values typed 'p b -> m b',
+-- then takes an instruction type 'i p a' to produce some result in
+-- 'm a'.
+--
+-- The base program type 'p' is forgotten.
+type Interpreter i m = forall p. InterpreterOn i p m
+
+
+-- | -- | And Interpreter is a function which takes a function for
+-- interpreting base-program values typed 'p b -> m b',
+-- then takes an instruction type 'i p a' to produce some result in
+-- 'm a'.
+type InterpreterOn i p m = forall a. (forall b. p b -> m b) -> i p a -> m a
 
 -- | Compose two Interpreters on instruction types 'i' and 'j' respectivly into an Interpreter
 -- which handles the composed Instruction type 'i :+: j'.
