@@ -10,7 +10,7 @@ name:                DSL-Compose
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.3.0.0
+version:             0.3.1.0
 
 -- A short (one-line) description of the package.
 -- synopsis:            
@@ -52,6 +52,7 @@ library
                      , DSL.Program
                      , DSL.Program.Interpreter
                      , DSL.Program.InterpreterR
+                     , DSL.Program.InterpreterS
                      , DSL.Program.Derive
                      , Example
   
