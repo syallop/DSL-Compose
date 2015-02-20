@@ -26,6 +26,7 @@ module DSL.Program
   , embed
   , Compile(compile)
   , ProgramUsing
+  , ProgramUsingIn
   ) where
 
 import DSL.Instruction
@@ -92,7 +93,11 @@ embed (Program p) = Program $ case mapProgram embed p of
 
 -- | Type of 'Program's that may use an instruction type 'i' as part
 -- of their instruction-set.
-type ProgramUsing i a = forall i'. (i :<- i') => Program i' a
+type ProgramUsing i a = forall i'. ProgramUsingIn i i' a
+
+-- | Type of 'Program's that may use an instruction type 'i' as part of a larger
+-- instruction-set 'i\''.
+type ProgramUsingIn i i' a = (i :<- i') => Program i' a
 
 -- | Class of types 't a' that can be canonically compiled to
 -- produce an 'a'.
