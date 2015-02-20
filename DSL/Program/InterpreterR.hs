@@ -1,7 +1,17 @@
-{-# LANGUAGE PolyKinds
-           , RankNTypes
-           , TypeOperators
+{-# LANGUAGE
+    PolyKinds
+  , RankNTypes
+  , TypeOperators
   #-}
+{-|
+Module     : DSL.Program.InterpreterR
+Copyright  : (c) Samuel A. Yallop, 2015
+Maintainer : syallop@gmail.com
+Stability  : experimental
+
+Similar API to 'DSL.Program.Interpret', where the 'InterpreterR' type differs from
+'Interpreter' by requiring some 'reader' type as input to the interpretation
+ -}
 module DSL.Program.InterpreterR
   ( InterpreterR
   , InterpreterROn
@@ -34,15 +44,16 @@ type InterpreterR i m r = forall p. InterpreterROn i p m r
 --   'm a'.
 type InterpreterROn i p m r = forall a. r -> (forall b. r -> p b -> m b) -> i p a -> m a
 
--- | Compose two InterpreterR's on instruction types 'i' and 'j' respectivly into an Interpreter
+-- | Compose two InterpreterR's on instruction types 'i' and 'j' respectively into an Interpreter
 -- which handles the composed Instruction type 'i :+: j'.
 composeInterpreter :: InterpreterR i m r -> InterpreterR j m r -> InterpreterR (i :+: j) m r
 composeInterpreter intI intJ = \r intBase ij -> case ij of
   InjL i -> intI r intBase i
   InjR j -> intJ r intBase j
 
+
 -- | InfixR synonym for 'composeInterpreter'.
--- Compose two InterpreterR's on instruction types 'i' and 'j' respectivly into an InterpreterR
+-- Compose two InterpreterR's on instruction types 'i' and 'j' respectively into an InterpreterR
 -- which handles the composed Instruction type 'i :+: j'.
 (&) :: InterpreterR i m r -> InterpreterR j m r -> InterpreterR (i :+: j) m r
 infixr &

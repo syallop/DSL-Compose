@@ -7,11 +7,25 @@
            , TypeOperators
            , UndecidableInstances
   #-}
-module DSL.Instruction
-  ( (:+:)(InjL,InjR) -- Instruction composition
-  , (:<-)(inj)       -- Element instructions
-  , (:<=)(coerce)    -- Instruction containment
+{-|
+Module     : DSL.Instruction
+Copyright  : (c) Samuel A. Yallop, 2015
+Maintainer : syallop@gmail.com
+Stability  : experimental
 
+Functions for working with plain instruction types.
+ -}
+module DSL.Instruction
+  (-- * Instruction composition
+    (:+:)(InjL,InjR)
+
+  -- ** Element instructions
+  , (:<-)(inj)
+
+  -- ** 'Subset' instructions
+  , (:<=)(coerce)
+
+  -- * Misc
   , MapProgram(mapProgram)
   ) where
 

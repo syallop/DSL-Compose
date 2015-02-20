@@ -9,7 +9,15 @@
            , TypeOperators
            , UndecidableInstances
   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-|
+Module     : DSL.Program
+Copyright  : (c) Samuel A. Yallop, 2015
+Maintainer : syallop@gmail.com
+Stability  : experimental
+
+Promote instructions into a monadic 'Program' type representing
+a sequence of instructions with a recursive base-program type of itself.
+ -}
 module DSL.Program
   ( Program(..)
   , ProgramInstr(..)

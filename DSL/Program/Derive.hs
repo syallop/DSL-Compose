@@ -1,4 +1,18 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-|
+Module     : DSL.Program.Derive
+Copyright  : (c) Samuel A. Yallop, 2015
+Maintainer : syallop@gmail.com
+Stability  : experimental
+
+Use TemplateHaskell to derive injection functions for instruction types.
+
+Note: Currently does not work for instruction types whose constructors use the 'p' typevar.
+
+I.E. NOT instructions like:
+data Instr p a where
+  Instr :: p Char -> Instr p ()
+-}
 module DSL.Program.Derive
   ( deriveInjections
   ) where

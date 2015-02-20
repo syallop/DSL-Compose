@@ -1,7 +1,17 @@
-{-# LANGUAGE PolyKinds
-           , RankNTypes
-           , TypeOperators
+{-# LANGUAGE
+    PolyKinds
+  , RankNTypes
+  , TypeOperators
   #-}
+{-|
+Module     : DSL.Program.Interpreter
+Copyright  : (c) Samuel A. Yallop, 2015
+Maintainer : syallop@gmail.com
+Stability  : experimental
+
+Explicitly compose 'Interpreter's of instruction types and use them to interpret
+identical or compatiblly structured 'Program's.
+ -}
 module DSL.Program.Interpreter
   ( Interpreter
   , InterpreterOn

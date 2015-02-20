@@ -4,6 +4,7 @@ A quick proof-of-concept of a mechanism for:
 
 1. Composing Domain-Specific-Language’s (a la “Data Types a` la Carte”[1]).
 2. With a possible wrapping monadic structure (as in “Simple and Compositional Reification of Monadic Embedded Languages”).
+3. Where each DSL may depend upon the composed program type it is contained within.
 3. And then interpreting them by explicit composition of interpreters (an extension).
 
 ##Example
@@ -129,6 +130,7 @@ interpreter on a program with an identical composition structure.
 
 E.G. the ‘exProgram’ example could be interpreted:
 ```haskell
+exInterpreter :: Interpreter (ArithOp :+: BoolOp :+: IOOp) IO
 exInterpreter = exArithInterpreter
               & exBoolInterpreter
               & exIOInterpreter
@@ -144,8 +146,8 @@ Running:
 ```
 
 ####Compatibly
-Finally - and the main extension of the code - is the ability to explicitly interpret programs
-with compatible (but not structurally identical) intepreter compositions.
+FInally, progam can be explicitly interpreted with compatible
+(but not structurally identical) intepreter compositions.
 
 ‘interpretUsing’ implements this functionality and can therefore be used on
 compositions which:
