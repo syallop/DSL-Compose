@@ -48,6 +48,7 @@ cabal-version:       >=1.10
 library
   -- Modules exported by the library.
   exposed-modules:     DSL.Instruction
+                     , DSL.Instruction.Derive
                      , DSL.Program
                      , DSL.Program.Interpreter
                      , DSL.Program.InterpreterR
