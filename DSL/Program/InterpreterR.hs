@@ -46,7 +46,7 @@ type InterpreterROn i p m r = forall a. r -> (forall b. r -> p b -> m b) -> i p 
 
 -- | Compose two InterpreterR's on instruction types 'i' and 'j' respectively into an Interpreter
 -- which handles the composed Instruction type 'i :+: j'.
-composeInterpreter :: InterpreterR i m r -> InterpreterR j m r -> InterpreterR (i :+: j) m r
+composeInterpreter :: InterpreterROn i p m r -> InterpreterROn j p m r -> InterpreterROn (i :+: j) p m r
 composeInterpreter intI intJ = \r intBase ij -> case ij of
   InjL i -> intI r intBase i
   InjR j -> intJ r intBase j
@@ -55,12 +55,12 @@ composeInterpreter intI intJ = \r intBase ij -> case ij of
 -- | InfixR synonym for 'composeInterpreter'.
 -- Compose two InterpreterR's on instruction types 'i' and 'j' respectively into an InterpreterR
 -- which handles the composed Instruction type 'i :+: j'.
-(&) :: InterpreterR i m r -> InterpreterR j m r -> InterpreterR (i :+: j) m r
+(&) :: InterpreterROn i p m r -> InterpreterROn j p m r -> InterpreterROn (i :+: j) p m r
 infixr &
 (&) = composeInterpreter
 
 -- | Interpret a Program with an identically shaped InterpreterR.
-interpret :: Monad m => InterpreterR i m r -> r -> Program i a -> m a
+interpret :: Monad m => InterpreterROn i (Program i) m r -> r -> Program i a -> m a
 interpret int r (Program p) = case p of
   Return a -> return a
   Instr  i -> int r (interpret int) i
@@ -70,6 +70,6 @@ interpret int r (Program p) = case p of
 --
 -- I.E. The InterpreterR must cover each of the Instruction types used in the Program
 --  , composed in any order. It may also compose other, unused Instruction type.
-interpretUsing :: (Monad m, i :<= j) => InterpreterR j m r -> r -> Program i a -> m a
+interpretUsing :: (Monad m, i :<= j) => InterpreterROn j (Program i) m r -> r -> Program i a -> m a
 interpretUsing int r p = interpret (\r baseInt -> int r baseInt . coerce) r p
 

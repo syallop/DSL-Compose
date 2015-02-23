@@ -41,7 +41,7 @@ type InterpreterOn i p m = forall a. (forall b. p b -> m b) -> i p a -> m a
 
 -- | Compose two Interpreters on instruction types 'i' and 'j' respectivly into an Interpreter
 -- which handles the composed Instruction type 'i :+: j'.
-composeInterpreter :: Interpreter i m -> Interpreter j m -> Interpreter (i :+: j) m
+composeInterpreter :: InterpreterOn i p m -> InterpreterOn j p m -> InterpreterOn (i :+: j) p m
 composeInterpreter intI intJ = \intBase ij -> case ij of
   InjL i -> intI intBase i
   InjR j -> intJ intBase j
@@ -49,12 +49,12 @@ composeInterpreter intI intJ = \intBase ij -> case ij of
 -- | InfixR synonym for 'composeInterpreter'.
 -- Compose two Interpreters on instruction types 'i' and 'j' respectivly into an Interpreter
 -- which handles the composed Instruction type 'i :+: j'.
-(&) :: Interpreter i m -> Interpreter j m -> Interpreter (i :+: j) m
+(&) :: InterpreterOn i p m -> InterpreterOn j p m -> InterpreterOn (i :+: j) p m
 infixr &
 (&) = composeInterpreter
 
 -- | Interpret a Program with an identically shaped Interpreter.
-interpret :: Monad m => Interpreter i m -> Program i a -> m a
+interpret :: Monad m => InterpreterOn i (Program i) m -> Program i a -> m a
 interpret int (Program p) = case p of
   Return a -> return a
   Instr  i -> int (interpret int) i
@@ -64,6 +64,6 @@ interpret int (Program p) = case p of
 --
 -- I.E. The Interpreter must cover each of the Instruction types used in the Program
 -- , composed in any order. It may also compose other, unused Instruction types.
-interpretUsing :: (Monad m, i :<= j) => Interpreter j m -> Program i a -> m a
+interpretUsing :: (Monad m, i :<= j) => InterpreterOn j (Program i) m -> Program i a -> m a
 interpretUsing int i = interpret (\baseInt -> int baseInt . coerce) i
 
