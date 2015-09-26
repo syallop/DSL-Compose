@@ -28,8 +28,6 @@ import Language.Haskell.TH
 
 -- | And InterpreterR is a function which takes:
 -- - Some 'read' input state 'r'
--- - A function for interpreting base-programs (which is passed the read value)
---   typed 'r -> p b -> m b',
 -- - And takes an instruction type 'i p a' to produce some result in
 --   'm a'.
 --
@@ -38,8 +36,6 @@ type InterpreterR i m r = forall p. InterpreterROn i p m r
 
 -- | And InterpreterR is a function which takes:
 -- - Some 'read' input state 'r'
--- - A function for interpreting base-programs (which is passed the read value)
---   typed 'r -> p b -> m b',
 -- - And takes an instruction type 'i p a' to produce some result in
 --   'm a'.
 type InterpreterROn i p m r = forall a. r -> i p a -> m a

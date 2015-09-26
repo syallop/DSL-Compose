@@ -24,19 +24,15 @@ module DSL.Program.Interpreter
 import DSL.Instruction
 import DSL.Program
 
--- | And Interpreter is a function which takes a function for
--- interpreting base-program values typed 'p b -> m b',
--- then takes an instruction type 'i p a' to produce some result in
--- 'm a'.
+-- | And Interpreter is a function which takes an instruction type 'i p a'
+-- to produce some result in 'm a'.
 --
 -- The base program type 'p' is forgotten.
 type Interpreter i m = forall p. InterpreterOn i p m
 
 
--- | -- | And Interpreter is a function which takes a function for
--- interpreting base-program values typed 'p b -> m b',
--- then takes an instruction type 'i p a' to produce some result in
--- 'm a'.
+-- | An Interpreter is a function which takes an instruction type 'i p a'
+-- to produce some result in 'm a'.
 type InterpreterOn i p m = forall a. i p a -> m a
 
 -- | Compose two Interpreters on instruction types 'i' and 'j' respectivly into an Interpreter

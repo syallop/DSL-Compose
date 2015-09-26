@@ -30,8 +30,6 @@ type InterpreterS i m s = forall p. InterpreterSOn i p m s
 
 -- | And InterpreterS is a function which takes:
 -- - Some input state 's'
--- - A function for interpreting base-programs (which is passed the state value)
---   typed 's -> p b -> m (b,s)',
 -- - And takes an instruction type 'i p a' to produce some result in
 --   'm (a,s)' along with a resulting state.
 type InterpreterSOn i p m s = forall a. s -> i p a -> m (a,s)
