@@ -53,6 +53,7 @@ library
                      , DSL.Program.Interpreter
                      , DSL.Program.InterpreterR
                      , DSL.Program.InterpreterS
+                     , DSL.Program.InterpreterRWS
                      , DSL.Program.Derive
                      , Example
   
