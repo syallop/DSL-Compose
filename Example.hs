@@ -97,19 +97,19 @@ exProgram = do
 
 -- | An example interpreter for ArithOp's, producing a result in IO
 exArithInterpreter :: Interpreter ArithOp IO
-exArithInterpreter _ = \case
+exArithInterpreter = \case
   Add x y -> return $ x + y
   Mul x y -> return $ x * y
 
 -- | An example interpreter for IOOp's, producing a result in IO.
 exIOInterpreter :: Interpreter IOOp IO
-exIOInterpreter _ = \case
+exIOInterpreter = \case
   GetInt   -> getLine >>= return . read
   PutInt i -> print i
 
 -- | An example interpreter for FooOp's, producing a result in IO.
 exFooInterpreter :: Interpreter FooOp IO
-exFooInterpreter _ = \case
+exFooInterpreter = \case
   Foo -> putStrLn "Foo"
   Bar -> putStrLn "Bar"
   Baz -> putStrLn "Baz"
