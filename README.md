@@ -1,4 +1,4 @@
-#Compose DSL’s and their Interpreters
+# Compose DSL’s and their Interpreters
 
 A quick proof-of-concept of a mechanism for:
 
@@ -7,8 +7,8 @@ A quick proof-of-concept of a mechanism for:
 3. Where each DSL may depend upon the composed program type it is contained within.
 3. And then interpreting them by explicit composition of interpreters (an extension).
 
-##Example
-###Defining DSL’s
+## Example
+### Defining DSL’s
 We define three separate DSL’s, one each responsible for arithmetic operations
 , boolean operations and IO operations.
 
@@ -63,7 +63,7 @@ $(deriveInjections ‘’IOOp)
 
 ```
 
-###Composing DSL’s
+### Composing DSL’s
 Instruction types are composed with ‘:+:’, and ‘Program’ wraps instructions compositions
 with the capability to be used as a monadic sequence of instructions.
 
@@ -93,7 +93,7 @@ exProgram = do
     putInt j
 ```
 
-###Writing Interpreters
+### Writing Interpreters
 We can write interpreters for Instruction types like:
 ```haskell
 exArithInterpreter :: Interpreter ArithOp IO
@@ -120,8 +120,8 @@ which desugars to
 ```
 )
 
-###Composing Interpreters
-####Precisely
+### Composing Interpreters
+#### Precisely
 We can compose interpreters with ‘&’ to produce an interpreter which
 can interpret both instruction types.
 
@@ -145,8 +145,8 @@ Running:
 <<< 36
 ```
 
-####Compatibly
-FInally, progam can be explicitly interpreted with compatible
+#### Compatibly
+Finally, progam can be explicitly interpreted with compatible
 (but not structurally identical) intepreter compositions.
 
 ‘interpretUsing’ implements this functionality and can therefore be used on
@@ -170,7 +170,7 @@ exInterpreter2 = exFooInterpreter
                & exBarInterpreter
 ```
 
-##Citations
+## Citations
 1. Wouter Swierstra - “Data Types a` la Carte, Journal of Functional Programming”
 2. Josef Svenningsson,Bo Joel Svensson - “Simple and Compositional Reification of Monadic Embedded Languages”
 
