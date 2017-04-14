@@ -1,12 +1,5 @@
 name:                DSL-Compose
-
--- The package version.  See the Haskell package versioning policy (PVP) 
--- for standards guiding when and how versions should be incremented.
--- http://www.haskell.org/haskellwiki/Package_versioning_policy
--- PVP summary:      +-+------- breaking API changes
---                   | | +----- non-breaking API additions
---                   | | | +--- code changes with no API change
-version:             0.3.2.0
+version:             0.4.2.0
 
 synopsis:            Compose DSL's and their Interpreters.
 
@@ -16,34 +9,12 @@ description:         A quick proof-of-concept mechanism for composing 'operation
                      Interpreters can then be written for individual languages and similarly composed.
                      Interpreters can either be ran against structurally identical languages or against
                      those which are 'compatible'.
-
--- The license under which the package is released.
--- license:             
-
--- The file containing the license text.
 license-file:        LICENSE
-
--- The package author(s).
 author:              Samuel A. Yallop
-
--- An email address to which users can send suggestions, bug reports, and 
--- patches.
 maintainer:          syallop@gmail.com
-
--- A copyright notice.
--- copyright:           
-
 category:            DSL
-
 build-type:          Simple
-
--- Extra files to be distributed with the package, such as examples or a 
--- README.
--- extra-source-files:  
-
--- Constraint on the version of Cabal needed to build this package.
 cabal-version:       >=1.10
-
 
 library
   -- Modules exported by the library.
@@ -56,11 +27,7 @@ library
                      , DSL.Program.InterpreterRWS
                      , DSL.Program.Derive
                      , Example
-  
-  -- Modules included in this library but not exported.
-  -- other-modules:       
-  
-  -- LANGUAGE extensions used by modules in this package.
+
   other-extensions:    FlexibleInstances
                      , GADTs
                      , MultiParamTypeClasses
@@ -69,15 +36,12 @@ library
                      , UndecidableInstances
                      , FlexibleContexts
                      , RankNTypes
-  
+
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.7 && <4.8
+  build-depends:       base
                      , template-haskell
                      , transformers
-  
-  -- Directories containing source files.
-  -- hs-source-dirs:      
-  
+
   -- Base language which the package is written in.
   default-language:    Haskell2010
-  
+

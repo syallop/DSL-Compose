@@ -6,6 +6,7 @@
            , RankNTypes
            , TypeOperators
            , UndecidableInstances
+           , IncoherentInstances
   #-}
 {-|
 Module     : DSL.Instruction

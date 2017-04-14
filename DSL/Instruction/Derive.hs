@@ -9,13 +9,13 @@ Use TemplateHaskell to derive boilerplate for instruction types.
 
 -}
 module DSL.Instruction.Derive
-  ( InstrTyVars(),_instrProgRtVar,_instrReturnTyVar
+  ( InstrTyVars (),_instrProgRtVar,_instrReturnTyVar
   , extractInstrTyVars
 
-  , InstrSetInfo(), _instrSetCtx,_instrSetName,_instrSetQuantifiers
+  , InstrSetInfo (), _instrSetCtx,_instrSetName,_instrSetQuantifiers
   , extractInstrSetInfo
 
-  , InstrInfo(),_instrName,_instrQuantifiers,_instrCtx,_instrParams
+  , InstrInfo (),_instrName,_instrQuantifiers,_instrCtx,_instrParams,_instrResultType
   , extractInstrInfos
   , extractInstrInfo
   ) where
@@ -57,7 +57,7 @@ extractInstrTyVars [prog,ret]
 extractInstrTyVars _ = fail "instruction set must be kinded '(* -> *) -> * -> *'"
 
 
--- | Represents information about an instruction set like type 
+-- | Represents information about an instruction set like type
 -- , but NOT any contained instructions/ constructors.
 data InstrSetInfo = InstrSetInfo
   {_instrSetCtx         :: Cxt         -- ^ data {cxt} => InstrSet p a where
@@ -82,6 +82,7 @@ data InstrInfo = InstrInfo
   ,_instrQuantifiers :: [TyVarBndr] -- Name :: forall {TVARS}. CXT => TPARAMS -> InstrSetName INSTRSETTVARS
   ,_instrCtx         :: Cxt         -- Name :: forall TVARS. {CXT} => TPARAMS -> InstrSetName INSTRSETTVARS
   ,_instrParams      :: [Type]      -- Name :: forall TVARS. CXT => {TPARAMS} -> InstrSetName INSTRSETTVARS
+  ,_instrResultType  :: Type        -- Name :: forall TVARS. CTX => TPARAMS -> InstrSetName p {RESULTTYPE}
   }
 
 -- | Extract all of a list of GADT constructors
@@ -96,11 +97,14 @@ extractInstrInfos = mapM extractInstrInfo
 -- Fails if the constructor is not GADT-like.
 extractInstrInfo :: Con -> Q InstrInfo
 extractInstrInfo c = case c of
-  (ForallC instrQuantifiers instrCtx (NormalC instrName instrParams))
-    -> return $ InstrInfo instrName instrQuantifiers instrCtx (map snd instrParams)
+  (ForallC instrQuantifiers instrCtx constructor)
+    -> case constructor of
+         GadtC [instrName] instrParams ty
+           -> let -- :: -> ArithOp p {Int}
+                  AppT (AppT (ConT _instrName) (VarT _pname)) instrResultTy = ty
+               in return $ InstrInfo instrName instrQuantifiers instrCtx (map snd instrParams) instrResultTy
 
-  (ForallC _ _ _)
-    -> fail "Records and infix instructions not supported"
+         _ -> fail "Records and infix instructions not supported"
 
   _ -> fail "Non 'forall' quantified instructions not supported. Use a GADT?"
 

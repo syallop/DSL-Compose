@@ -72,7 +72,7 @@ deriveInjections tName = do
 --
 -- => It must be a GADT.
 validDeclaration :: Info -> Q (Cxt,Name,[TyVarBndr],[Con])
-validDeclaration (TyConI (DataD dCtx dName dTyVars dCons dDeriving)) = return (dCtx,dName,dTyVars,dCons)
+validDeclaration (TyConI (DataD dCtx dName dTyVars _dKy dCons dDeriving)) = return (dCtx,dName,dTyVars,dCons)
 validDeclaration _ = fail "Non GADT types not supported"
 
 
@@ -112,11 +112,16 @@ generateInjectionFunction instrSetInfo instrInfo = do
     --          . {instrSetCtx ++ instrCtx}
     --         => {instrParams} -> ProgramUsingIn {instrName} {compInstrName} {_instrReturn}
     injTypeTerminate <- [t| ProgramUsingIn $(instrType) $(return compInstrType) $(retType) |]
+    retTypeActuated  <- retType
     let injQuantifiers =  (PlainTV $ _instrReturnTyVar $ _instrSetQuantifiers instrSetInfo)
                          : (PlainTV $ compInstrName)
                          : (_instrQuantifiers instrInfo)
-        injCtx         = (_instrSetCtx instrSetInfo) ++ (_instrCtx instrInfo)
-        instrParams    = _instrParams instrInfo
+
+        -- Sometime we need to add an a~instrReturn type to the ctx. It shouldnt
+        -- hurt to just always do this, worse case we're adding a~a
+        constrainRetCtx = AppT (AppT EqualityT retTypeActuated) (_instrResultType instrInfo)
+        injCtx          = (_instrSetCtx instrSetInfo) ++ (_instrCtx instrInfo) ++ [constrainRetCtx]
+        instrParams     = _instrParams instrInfo
 
     instrParams' <- tieBaseProgramTypes instrParams progName compInstrType
     let injType = arrowCompose instrParams' injTypeTerminate
