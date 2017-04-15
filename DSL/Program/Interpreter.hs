@@ -31,16 +31,18 @@ import DSL.Program
 type Interpreter i m = forall p. InterpreterOn i p m
 
 
--- | An Interpreter is a function which takes an instruction type 'i p a'
--- to produce some result in 'm a'.
-type InterpreterOn i p m = forall a. i p a -> m a
+-- | -- | And Interpreter is a function which takes a function for
+-- interpreting base-program values typed 'p b -> m b',
+-- then takes an instruction type 'i p a' to produce some result in
+-- 'm a'.
+type InterpreterOn i p m = forall a. (forall b. p b -> m b) -> i p a -> m a
 
 -- | Compose two Interpreters on instruction types 'i' and 'j' respectivly into an Interpreter
 -- which handles the composed Instruction type 'i :+: j'.
 composeInterpreter :: InterpreterOn i p m -> InterpreterOn j p m -> InterpreterOn (i :+: j) p m
-composeInterpreter intI intJ = \ij -> case ij of
-  InjL i -> intI i
-  InjR j -> intJ j
+composeInterpreter intI intJ = \intBase ij -> case ij of
+  InjL i -> intI intBase i
+  InjR j -> intJ intBase j
 
 -- | InfixR synonym for 'composeInterpreter'.
 -- Compose two Interpreters on instruction types 'i' and 'j' respectivly into an Interpreter
@@ -53,7 +55,7 @@ infixr &
 interpret :: Monad m => InterpreterOn i (Program i) m -> Program i a -> m a
 interpret int (Program p) = case p of
   Return a -> return a
-  Instr  i -> int i
+  Instr  i -> int (interpret int) i
   Bind m f -> interpret int m >>= interpret int . f
 
 -- | Interpret a Program with a compatible Interpreter.
@@ -61,5 +63,5 @@ interpret int (Program p) = case p of
 -- I.E. The Interpreter must cover each of the Instruction types used in the Program
 -- , composed in any order. It may also compose other, unused Instruction types.
 interpretUsing :: (Monad m, i :<= j) => InterpreterOn j (Program i) m -> Program i a -> m a
-interpretUsing int i = interpret (int . coerce) i
+interpretUsing int i = interpret (\baseInt -> int baseInt . coerce) i
 
