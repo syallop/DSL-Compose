@@ -1,5 +1,5 @@
 name:                DSL-Compose
-version:             0.4.2.0
+version:             0.4.3.0
 
 synopsis:            Compose DSL's and their Interpreters.
 
@@ -21,6 +21,7 @@ library
   exposed-modules:     DSL.Instruction
                      , DSL.Instruction.Derive
                      , DSL.Program
+                     , DSL.Program.InterpreterG
                      , DSL.Program.Interpreter
                      , DSL.Program.InterpreterR
                      , DSL.Program.InterpreterS
