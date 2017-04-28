@@ -2,6 +2,7 @@
     PolyKinds
   , RankNTypes
   , TypeOperators
+  , ScopedTypeVariables
   #-}
 {-|
 Module     : DSL.Program.Interpreter
@@ -16,52 +17,68 @@ module DSL.Program.Interpreter
   ( Interpreter
   , InterpreterOn
 
-  , composeInterpreter, (&)
   , interpret
   , interpretUsing
-  ) where
+
+  , Reader1 (..)
+  , reduceReader1
+  , Self (..)
+  )
+  where
 
 import DSL.Instruction
 import DSL.Program
+import DSL.Program.InterpreterG hiding (interpret,interpretUsing)
+import qualified DSL.Program.InterpreterG as G
 
--- | And Interpreter is a function which takes an instruction type 'i p a'
--- to produce some result in 'm a'.
+-- | Take some 'r' before producing an 'm a'.
+newtype Reader1 r m a = Reader1 (r -> m a)
+
+-- | Reduce e 'Reader1' into a 'm a' by supplying an initial 'r'.
+reduceReader1 :: r -> Reader1 r m a -> m a
+reduceReader1 r (Reader1 rf) = rf r
+
+-- | A reference to the entire composed interpreter may be passed into the
+-- context of individual interpreters.
+newtype Self p m = Self {_unSelf :: forall b. p b -> m b}
+
+-- | An 'Interpreter' is a function which takes some instruction type 'i p a' and
+-- produces some result in 'Reader1 (Self p m)' - I.E. the interpreter is passed
+-- a reference to the entire composite interpreter as a reader argument.
 --
--- The base program type 'p' is forgotten.
+-- - 'a' is the result type
+-- - 'm' is the context of the result type
+--
+-- When interpreters are composed, 'm' must be the same but the interpreters own
+-- context may vary.
+--
+-- A specific form of 'InterpreterG'.
 type Interpreter i m = forall p. InterpreterOn i p m
 
-
--- | -- | And Interpreter is a function which takes a function for
--- interpreting base-program values typed 'p b -> m b',
--- then takes an instruction type 'i p a' to produce some result in
--- 'm a'.
-type InterpreterOn i p m = forall a. (forall b. p b -> m b) -> i p a -> m a
-
--- | Compose two Interpreters on instruction types 'i' and 'j' respectivly into an Interpreter
--- which handles the composed Instruction type 'i :+: j'.
-composeInterpreter :: InterpreterOn i p m -> InterpreterOn j p m -> InterpreterOn (i :+: j) p m
-composeInterpreter intI intJ = \intBase ij -> case ij of
-  InjL i -> intI intBase i
-  InjR j -> intJ intBase j
-
--- | InfixR synonym for 'composeInterpreter'.
--- Compose two Interpreters on instruction types 'i' and 'j' respectivly into an Interpreter
--- which handles the composed Instruction type 'i :+: j'.
-(&) :: InterpreterOn i p m -> InterpreterOn j p m -> InterpreterOn (i :+: j) p m
-infixr &
-(&) = composeInterpreter
+-- | An 'Interpreter' is a function which takes some instruction type 'i p a' and
+-- produces some result in 'Reader1 (Self p m)' - I.E. the interpreter is passed
+-- a reference to the entire composite interpreter as a reader argument.
+--
+-- - 'a' is the result type
+-- - 'm' is the context of the result type
+--
+-- When interpreters are composed, 'm' must be the same but the interpreters own
+-- context may vary.
+--
+-- A specific form of 'InterpreterG'/ 'Interpreter' where we expose 'p'.
+type InterpreterOn i p m = G.InterpreterG i p m (Reader1 (Self p m))
 
 -- | Interpret a Program with an identically shaped Interpreter.
-interpret :: Monad m => InterpreterOn i (Program i) m -> Program i a -> m a
-interpret int (Program p) = case p of
-  Return a -> return a
-  Instr  i -> int (interpret int) i
-  Bind m f -> interpret int m >>= interpret int . f
+interpret :: forall m i a. Monad m => InterpreterOn i (Program i) m -> Program i a -> m a
+interpret int prog = G.interpret int reduce prog
+  where
+    reduce :: Reader1 (Self (Program i) m) m b -> m b
+    reduce (Reader1 f) = f (Self (interpret int))
 
 -- | Interpret a Program with a compatible Interpreter.
 --
 -- I.E. The Interpreter must cover each of the Instruction types used in the Program
 -- , composed in any order. It may also compose other, unused Instruction types.
 interpretUsing :: (Monad m, i :<= j) => InterpreterOn j (Program i) m -> Program i a -> m a
-interpretUsing int i = interpret (\baseInt -> int baseInt . coerce) i
+interpretUsing int p = interpret (int . coerce) p
 

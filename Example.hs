@@ -6,15 +6,20 @@
            , RankNTypes
            , TemplateHaskell
            , TypeOperators
+           , ScopedTypeVariables
   #-}
 module Example where
 
 import DSL.Instruction
 import DSL.Program
-import DSL.Program.Interpreter
+import DSL.Program.Interpreter  (Interpreter,InterpreterOn,Reader1(..),Self(..))
+import qualified DSL.Program.Interpreter as I
+import DSL.Program.InterpreterG
 
 import DSL.Program.Derive
 import Language.Haskell.TH
+
+import Debug.Trace
 
 -- | Some arithmetic operations
 data ArithOp (p :: * -> *) a where
@@ -94,50 +99,152 @@ exProgram = do
 
   putInt b
 
-
 -- | An example interpreter for ArithOp's, producing a result in IO
-exArithInterpreter :: Interpreter ArithOp IO
-exArithInterpreter _ = \case
+exArithInterpreter :: InterpreterG ArithOp p IO (Reader1 (Self p IO))
+exArithInterpreter i = Reader1 $ \_self -> case i of
   Add x y -> return $ x + y
   Mul x y -> return $ x * y
+arithReducer :: Reducer (Reader1 (Self (Program ArithOp) IO)) IO
+arithReducer (Reader1 f) = f $ Self $ interpret exArithInterpreter arithReducer
 
 -- | An example interpreter for IOOp's, producing a result in IO.
-exIOInterpreter :: Interpreter IOOp IO
-exIOInterpreter _ = \case
+exIOInterpreter :: InterpreterG IOOp p IO (Reader1 (Self p IO))
+exIOInterpreter i = Reader1 $ \_self -> case i of
   GetInt   -> getLine >>= return . read
   PutInt i -> print i
+ioReducer :: Reducer (Reader1 (Self (Program IOOp) IO)) IO
+ioReducer (Reader1 f) = f $ Self $ interpret exIOInterpreter ioReducer
+
 
 -- | An example interpreter for FooOp's, producing a result in IO.
-exFooInterpreter :: Interpreter FooOp IO
-exFooInterpreter _ = \case
+exFooInterpreter :: InterpreterG FooOp p IO (Reader1 (Self p IO))
+exFooInterpreter i = Reader1 $ \_self -> case i of
   Foo -> putStrLn "Foo"
   Bar -> putStrLn "Bar"
   Baz -> putStrLn "Baz"
+fooReducer :: Reducer (Reader1 (Self (Program FooOp) IO)) IO
+fooReducer (Reader1 f) = f $ Self $ interpret exFooInterpreter fooReducer
 
 
 -- | A valid composite interpreter for 'exProgram', composing interpreters in
 -- the same order as the program instruction composition order.
-interpreter1 = exArithInterpreter & exIOInterpreter & exFooInterpreter
-testExample1 = interpretUsing interpreter1 exProgram
+
+interpreter1
+  :: InterpreterG (ArithOp :+: IOOp :+: FooOp)
+                  (Program (ArithOp :+: IOOp :+: FooOp))
+                  IO
+                  (    Reader1 (Self (Program (ArithOp :+: IOOp :+: FooOp)) IO) 
+                   :+: Reader1 (Self (Program (ArithOp :+: IOOp :+: FooOp)) IO)
+                   :+: Reader1 (Self (Program (ArithOp :+: IOOp :+: FooOp)) IO)
+                  )
+interpreter1 = exArithInterpreter & (exIOInterpreter & exFooInterpreter)
+
+testExample1 = interpretUsing interpreter1 reducer exProgram
+  where
+    reducer :: (is~(ArithOp :+: IOOp :+: FooOp)
+               ,m~IO
+               )
+            =>  (   Reader1 (Self (Program is) m)
+                 :+:Reader1 (Self (Program is) m)
+                 :+:Reader1 (Self (Program is) m)
+                ) IO b
+            -> IO b
+    reducer rs = do
+      case rs of
+        InjL (Reader1 f)
+          -> f self
+
+        InjR (InjL (Reader1 f))
+          -> f self
+
+        InjR (InjR (Reader1 f))
+          -> f self
+
+    self :: Self (Program (ArithOp :+: IOOp :+: FooOp)) IO
+    self = Self $ interpret interpreter1 reducer
+
 
 -- | A valid composite interpreter for 'exProgram', composing interpreters in
 -- a different order as the program instruction composition order.
+interpreter2
+  :: InterpreterG (FooOp :+: ArithOp :+: IOOp)
+                  (Program is)
+                  IO
+                  (  Reader1 (Self (Program is) IO)
+                  :+:Reader1 (Self (Program is) IO)
+                  :+:Reader1 (Self (Program is) IO)
+                  )
 interpreter2 = exFooInterpreter & exArithInterpreter & exIOInterpreter
-testExample2 = interpretUsing interpreter2 exProgram
+testExample2 = interpretUsing interpreter2 reducer exProgram
+  where
+    reducer :: (is~(ArithOp :+: IOOp :+: FooOp)
+               ,m~IO
+               )
+            => (  Reader1 (Self (Program is) m)
+               :+:Reader1 (Self (Program is) m)
+               :+:Reader1 (Self (Program is) m)
+               ) IO b
+            -> IO b
+    reducer rs = case rs of
+      InjL (Reader1 f)
+        -> f self
+
+      InjR (InjL (Reader1 f))
+        -> f self
+
+      InjR (InjR (Reader1 f))
+        -> f self
+      where
+        self :: Self (Program (ArithOp :+: IOOp :+: FooOp)) IO
+        self = Self $ interpretUsing interpreter2 reducer
 
 -- | An empty instruction type
 data EmptyInst (p :: * -> *) a
 
 -- | An empty interpreter
 exEmptyInterpreter :: Interpreter EmptyInst IO
-exEmptyInterpreter = const undefined
+exEmptyInterpreter i = Reader1 $ \_self -> undefined
 
 -- | A valid composite interpreter for 'exProgram', composing interpreters in
 -- a different order as the program composition order, and including an
 -- extraneous interpreter.
+interpreter3
+  :: InterpreterG (ArithOp :+: EmptyInst :+: FooOp :+: IOOp)
+                  (Program is)
+                  IO
+                  (    Reader1 (Self (Program is) IO) 
+                   :+: Reader1 (Self (Program is) IO)
+                   :+: Reader1 (Self (Program is) IO)
+                   :+: Reader1 (Self (Program is) IO)
+                  )
 interpreter3 = exArithInterpreter
              & exEmptyInterpreter
              & exFooInterpreter
              & exIOInterpreter
-testExample3 = interpretUsing interpreter3 exProgram
+testExample3 = interpretUsing interpreter3 reducer exProgram
+  where
+    reducer :: (is~(ArithOp :+: IOOp :+: FooOp)
+               ,m~IO
+               )
+            => (  Reader1 (Self (Program is) m)
+               :+:Reader1 (Self (Program is) m)
+               :+:Reader1 (Self (Program is) m)
+               :+:Reader1 (Self (Program is) m)
+               ) IO b
+            -> IO b
+    reducer rs = case rs of
+      InjL (Reader1 f)
+        -> f self
+
+      InjR (InjL (Reader1 f))
+        -> f self
+
+      InjR (InjR (InjL (Reader1 f)))
+        -> f self
+
+      InjR (InjR (InjR (Reader1 f)))
+        -> f self
+      where
+        self :: Self (Program (ArithOp :+: IOOp :+: FooOp)) IO
+        self = Self $ interpretUsing interpreter3 reducer
 
