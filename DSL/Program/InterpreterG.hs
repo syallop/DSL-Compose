@@ -21,6 +21,8 @@ module DSL.Program.InterpreterG
   ,interpret
   ,interpretUsing
   ,compose, (&)
+
+  ,Reducer
   )
   where
 
@@ -35,7 +37,7 @@ import Control.Monad
 -- specific interpreter such that it can be composed with other interpreters
 -- with different 'n's but the same 'm'.
 
--- An Interpreter is a function which takes some instruction type 'i p a' to and
+-- An Interpreter is a function which takes some instruction type 'i p a' and
 -- produces some result in 'n m a' where:
 --
 -- - 'a' is the result type
@@ -45,6 +47,9 @@ import Control.Monad
 -- When interpreters are composed, 'm' must be the same but 'n' is separate.
 type InterpreterG i p m n = forall a. i p a -> n m a
 
+-- A Reducer translates from the interpreters context 'n' to the result context
+-- 'm'.
+type Reducer n m = forall b. n m b -> m b
 
 -- | Interpret a 'Program' with a compatible 'InterpreterG', passing a
 -- corresponding reduction function which translates from the interpreters
@@ -52,7 +57,7 @@ type InterpreterG i p m n = forall a. i p a -> n m a
 interpret
   :: (Monad m)
   => InterpreterG i (Program i) m n
-  -> (forall b. n m b -> m b)       -- ^ A reduction function from the interpreters context to the results context
+  -> Reducer n m
   -> Program i a
   -> m a
 interpret int reduce (Program p) = case p of
@@ -63,7 +68,7 @@ interpret int reduce (Program p) = case p of
     -> reduce $ int i
 
   Bind m f
-    -> interpret int reduce m >>= interpret int reduce . f 
+    -> interpret int reduce m >>= interpret int reduce . f
 
 -- | Interpret a Program as with 'interpret' but using a compatible rather than
 -- an exact 'InterpreterG'.
@@ -71,12 +76,12 @@ interpret int reduce (Program p) = case p of
 -- I.E. The InterpreterG must cover each of the Instruction types used in the
 -- Program, composed in any order. It may also compose other, unused Instruction
 -- types.
-interpretUsing 
+interpretUsing
   :: (Monad m
      ,i :<= j
      )
   => InterpreterG j (Program i) m n
-  -> (forall b. n m b -> m b)       -- ^ A reduction function from the interpreters context to the results context
+  -> Reducer n m
   -> Program i a
   -> m a
 interpretUsing int reduce p = interpret (int . coerce) reduce p
