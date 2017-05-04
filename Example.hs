@@ -12,8 +12,6 @@ module Example where
 
 import DSL.Instruction
 import DSL.Program
-import DSL.Program.Interpreter  (Interpreter,InterpreterOn,Reader1(..),Self(..))
-import qualified DSL.Program.Interpreter as I
 import DSL.Program.InterpreterG
 
 import DSL.Program.Derive
@@ -100,7 +98,7 @@ exProgram = do
   putInt b
 
 -- | An example interpreter for ArithOp's, producing a result in IO
-exArithInterpreter :: InterpreterG ArithOp p IO (Reader1 (Self p IO))
+exArithInterpreter :: InterpreterSelf ArithOp IO
 exArithInterpreter i = Reader1 $ \_self -> case i of
   Add x y -> return $ x + y
   Mul x y -> return $ x * y
@@ -108,7 +106,7 @@ arithReducer :: Reducer (Reader1 (Self (Program ArithOp) IO)) IO
 arithReducer (Reader1 f) = f $ Self $ interpret exArithInterpreter arithReducer
 
 -- | An example interpreter for IOOp's, producing a result in IO.
-exIOInterpreter :: InterpreterG IOOp p IO (Reader1 (Self p IO))
+exIOInterpreter :: InterpreterSelf IOOp IO
 exIOInterpreter i = Reader1 $ \_self -> case i of
   GetInt   -> getLine >>= return . read
   PutInt i -> print i
@@ -117,7 +115,8 @@ ioReducer (Reader1 f) = f $ Self $ interpret exIOInterpreter ioReducer
 
 
 -- | An example interpreter for FooOp's, producing a result in IO.
-exFooInterpreter :: InterpreterG FooOp p IO (Reader1 (Self p IO))
+{-exFooInterpreter :: InterpreterG FooOp p IO (Reader1 (Self p IO))-}
+exFooInterpreter :: InterpreterSelf FooOp IO
 exFooInterpreter i = Reader1 $ \_self -> case i of
   Foo -> putStrLn "Foo"
   Bar -> putStrLn "Bar"
@@ -133,7 +132,7 @@ interpreter1
   :: InterpreterG (ArithOp :+: IOOp :+: FooOp)
                   (Program (ArithOp :+: IOOp :+: FooOp))
                   IO
-                  (    Reader1 (Self (Program (ArithOp :+: IOOp :+: FooOp)) IO) 
+                  (    Reader1 (Self (Program (ArithOp :+: IOOp :+: FooOp)) IO)
                    :+: Reader1 (Self (Program (ArithOp :+: IOOp :+: FooOp)) IO)
                    :+: Reader1 (Self (Program (ArithOp :+: IOOp :+: FooOp)) IO)
                   )
@@ -202,7 +201,7 @@ testExample2 = interpretUsing interpreter2 reducer exProgram
 data EmptyInst (p :: * -> *) a
 
 -- | An empty interpreter
-exEmptyInterpreter :: Interpreter EmptyInst IO
+exEmptyInterpreter :: InterpreterSelf EmptyInst IO
 exEmptyInterpreter i = Reader1 $ \_self -> undefined
 
 -- | A valid composite interpreter for 'exProgram', composing interpreters in
@@ -212,7 +211,7 @@ interpreter3
   :: InterpreterG (ArithOp :+: EmptyInst :+: FooOp :+: IOOp)
                   (Program is)
                   IO
-                  (    Reader1 (Self (Program is) IO) 
+                  (    Reader1 (Self (Program is) IO)
                    :+: Reader1 (Self (Program is) IO)
                    :+: Reader1 (Self (Program is) IO)
                    :+: Reader1 (Self (Program is) IO)
