@@ -33,6 +33,7 @@ import DSL.Instruction
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Fail
 
 -- | A ProgramInstr is a sequence of instructions from 'i' which can
 -- be interpreted to produce some return value 'a'.
@@ -74,6 +75,8 @@ instance Applicative (Program i) where
 instance Functor (Program i) where
   fmap = liftM
 
+instance MonadFail (Program i) where
+  fail = error
 
 -- | Inject an instruction into a program containing that instruction type.
 inject :: (i :<- i') => i (Program i') a -> Program i' a
