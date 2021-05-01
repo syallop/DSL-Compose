@@ -1,3 +1,5 @@
+-- TODO: Do we want interpretUsing to violate this?
+{-# OPTIONS_GHC -Wno-simplifiable-class-constraints #-}
 {-# LANGUAGE
     PolyKinds
   , RankNTypes

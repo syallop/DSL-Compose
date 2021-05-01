@@ -21,7 +21,6 @@ module DSL.Instruction.Derive
   ) where
 
 import Language.Haskell.TH
-import Language.Haskell.TH.Syntax
 
 -- | Two type variables which all of our instruction types must have.
 data InstrTyVars = InstrTyVars
@@ -41,12 +40,12 @@ extractInstrTyVars [prog,ret]
     | otherwise = return $ InstrTyVars (tyVarBndrName prog) (tyVarBndrName ret)
   where
     validReturnTyVar = case ret of
-      PlainTV name        -> True
-      KindedTV name StarT -> True
+      PlainTV  _name       -> True
+      KindedTV _name StarT -> True
       _                   -> False
 
     validProgramTyVar = case prog of
-      KindedTV name (AppT (AppT ArrowT StarT) StarT)
+      KindedTV _name (AppT (AppT ArrowT StarT) StarT)
         -> True
 
       _ -> False
@@ -68,9 +67,9 @@ data InstrSetInfo = InstrSetInfo
 -- | Given an instruction sets context, type-name, and type variables
 -- , try and extract a vali InstrSetInfo in Q.
 extractInstrSetInfo :: Cxt -> Name -> [TyVarBndr] -> Q InstrSetInfo
-extractInstrSetInfo cxt name quantifiers = do
+extractInstrSetInfo ctx name quantifiers = do
   instrQuantifiers <- extractInstrTyVars quantifiers
-  return $ InstrSetInfo cxt name instrQuantifiers
+  return $ InstrSetInfo ctx name instrQuantifiers
 
 
 -- | Represents information held on a single instruction of an instruction set.
@@ -99,10 +98,8 @@ extractInstrInfo :: Con -> Q InstrInfo
 extractInstrInfo c = case c of
   (ForallC instrQuantifiers instrCtx constructor)
     -> case constructor of
-         GadtC [instrName] instrParams ty
-           -> let -- :: -> ArithOp p {Int}
-                  AppT (AppT (ConT _instrName) (VarT _pname)) instrResultTy = ty
-               in return $ InstrInfo instrName instrQuantifiers instrCtx (map snd instrParams) instrResultTy
+         GadtC [instrName] instrParams (AppT (AppT (ConT _instrName) (VarT _pname)) instrResultTy)
+           -> return $ InstrInfo instrName instrQuantifiers instrCtx (map snd instrParams) instrResultTy
 
          _ -> fail "Records and infix instructions not supported"
 

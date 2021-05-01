@@ -40,8 +40,6 @@ module DSL.Program.InterpreterG
 import DSL.Instruction
 import DSL.Program
 
-import Control.Monad
-
 -- A function which takes some instruction type 'i p a' to produce some result
 -- in 'n m a' where
 -- 'm' is the resulting type to compile to and 'n' adds functionality to this

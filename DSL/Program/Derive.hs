@@ -19,10 +19,8 @@ import DSL.Instruction.Derive
 
 import Data.Char
 
-import Control.Monad.IO.Class
 import Control.Monad
 import Language.Haskell.TH
-import Language.Haskell.TH.Syntax
 
 -- | Given a name which refers to an instruction set like GADT
 -- , derive corresponding injection functions.
@@ -72,7 +70,7 @@ deriveInjections tName = do
 --
 -- => It must be a GADT.
 validDeclaration :: Info -> Q (Cxt,Name,[TyVarBndr],[Con])
-validDeclaration (TyConI (DataD dCtx dName dTyVars _dKy dCons dDeriving)) = return (dCtx,dName,dTyVars,dCons)
+validDeclaration (TyConI (DataD dCtx dName dTyVars _dKy dCons _dDeriving)) = return (dCtx,dName,dTyVars,dCons)
 validDeclaration _ = fail "Non GADT types not supported"
 
 

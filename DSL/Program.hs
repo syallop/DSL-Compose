@@ -31,9 +31,7 @@ module DSL.Program
 
 import DSL.Instruction
 
-import Control.Applicative
 import Control.Monad
-import Control.Monad.Fail
 
 -- | A ProgramInstr is a sequence of instructions from 'i' which can
 -- be interpreted to produce some return value 'a'.
@@ -52,7 +50,7 @@ data ProgramInstr i p a where
 -- how to change a ProgramInstr's underlying base program type.
 instance MapProgram i
       => MapProgram (ProgramInstr i) where
-  mapProgram f i = case i of
+  mapProgram f = \case
     Instr  i  -> Instr $ mapProgram f i
     Return a  -> Return a
     Bind p fp -> Bind (f p) (\a -> f (fp a))

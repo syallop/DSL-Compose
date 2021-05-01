@@ -1,3 +1,5 @@
+-- TODO: Do we want interpretUsing to violate this?
+{-# OPTIONS_GHC -Wno-simplifiable-class-constraints #-}
 {-# LANGUAGE
     PolyKinds
   , RankNTypes
@@ -22,9 +24,6 @@ module DSL.Program.InterpreterS
 
 import DSL.Instruction
 import DSL.Program
-import DSL.Program.Derive
-
-import Language.Haskell.TH
 
 type InterpreterS i m s = forall p. InterpreterSOn i p m s
 
@@ -61,5 +60,5 @@ interpret int s (Program p) = case p of
 -- I.E. The InterpreterS must cover each of the Instruction types used in the Program
 --  , composed in any order. It may also compose other, unused Instruction type.
 interpretUsing :: (Monad m, i :<= j) => InterpreterSOn j (Program i) m s -> s -> Program i a -> m (a,s)
-interpretUsing int s p = interpret (\s baseInt -> int s baseInt . coerce) s p
+interpretUsing int s p = interpret (\s' baseInt -> int s' baseInt . coerce) s p
 

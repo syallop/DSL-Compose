@@ -1,3 +1,5 @@
+-- TODO: Deriviations would ideally not generate unused quantifiers.
+{-# OPTIONS_GHC -Wno-unused-foralls #-}
 {-# LANGUAGE FlexibleContexts
            , GADTs
            , ImpredicativeTypes
@@ -15,9 +17,6 @@ import DSL.Program
 import DSL.Program.InterpreterG
 
 import DSL.Program.Derive
-import Language.Haskell.TH
-
-import Debug.Trace
 
 -- | Some arithmetic operations
 data ArithOp (p :: * -> *) a where
@@ -30,7 +29,7 @@ data ArithOp (p :: * -> *) a where
 {-mul x y = inject $ Add x y-}
 $(deriveInjections ''ArithOp)
 instance MapProgram ArithOp where
-  mapProgram f = \case
+  mapProgram _f = \case
     Add x y -> Add x y
     Mul x y -> Mul x y
 
@@ -107,7 +106,7 @@ arithReducer (Reader1 f) = f $ Self $ interpret exArithInterpreter arithReducer
 
 -- | An example interpreter for IOOp's, producing a result in IO.
 exIOInterpreter :: InterpreterSelf IOOp IO
-exIOInterpreter i = Reader1 $ \_self -> case i of
+exIOInterpreter inst = Reader1 $ \_self -> case inst of
   GetInt   -> getLine >>= return . read
   PutInt i -> print i
 ioReducer :: Reducer (Reader1 (Self (Program IOOp) IO)) IO
@@ -138,6 +137,7 @@ interpreter1
                   )
 interpreter1 = exArithInterpreter & (exIOInterpreter & exFooInterpreter)
 
+testExample1 :: IO ()
 testExample1 = interpretUsing interpreter1 reducer exProgram
   where
     reducer :: (is~(ArithOp :+: IOOp :+: FooOp)
@@ -174,6 +174,8 @@ interpreter2
                   :+:Reader1 (Self (Program is) IO)
                   )
 interpreter2 = exFooInterpreter & exArithInterpreter & exIOInterpreter
+
+testExample2 :: IO ()
 testExample2 = interpretUsing interpreter2 reducer exProgram
   where
     reducer :: (is~(ArithOp :+: IOOp :+: FooOp)
@@ -202,7 +204,7 @@ data EmptyInst (p :: * -> *) a
 
 -- | An empty interpreter
 exEmptyInterpreter :: InterpreterSelf EmptyInst IO
-exEmptyInterpreter i = Reader1 $ \_self -> undefined
+exEmptyInterpreter _i = Reader1 $ \_self -> undefined
 
 -- | A valid composite interpreter for 'exProgram', composing interpreters in
 -- a different order as the program composition order, and including an
@@ -220,6 +222,8 @@ interpreter3 = exArithInterpreter
              & exEmptyInterpreter
              & exFooInterpreter
              & exIOInterpreter
+
+testExample3 :: IO ()
 testExample3 = interpretUsing interpreter3 reducer exProgram
   where
     reducer :: (is~(ArithOp :+: IOOp :+: FooOp)

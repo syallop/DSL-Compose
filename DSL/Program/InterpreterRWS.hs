@@ -1,15 +1,21 @@
+-- TODO: Do we want interpretUsing to violate this?
+{-# OPTIONS_GHC -Wno-simplifiable-class-constraints #-}
 {-# LANGUAGE
     PolyKinds
   , RankNTypes
   , TypeOperators
   #-}
-module DSL.Program.InterpreterRWS where
+module DSL.Program.InterpreterRWS
+  ( InterpreterRWS
+  , InterpreterRWSOn
+  , composeInterpreter, (&)
+  , interpret
+  , interpretUsing
+  )
+  where
 
 import DSL.Instruction
 import DSL.Program
-import DSL.Program.Derive
-
-import Data.Monoid
 
 type InterpreterRWS i m r w s = forall p. InterpreterRWSOn i p m r w s
 
@@ -48,5 +54,5 @@ interpret int r s (Program p) = case p of
 -- I.E. The InterpreterRWS must cover each of the Instruction types used in the Program
 --  , composed in any order. It may also compose other unused Instruction types.
 interpretUsing :: (Monad m, Monoid w, i :<= j) => InterpreterRWSOn j (Program i) m r w s -> r -> s -> Program i a -> m (a,s,w)
-interpretUsing int r s p = interpret (\r s -> int r s . coerce) r s p
+interpretUsing int r s p = interpret (\r' s' -> int r' s' . coerce) r s p
 
