@@ -63,11 +63,10 @@ instance MapProgram i
 newtype Program i a = Program (ProgramInstr i (Program i) a)
 
 instance Monad (Program i) where
-  return     = Program . Return
   ia >>= fab = Program $ Bind ia fab
 
 instance Applicative (Program i) where
-  pure = return
+  pure = Program . Return
   (<*>)  = ap
 
 instance Functor (Program i) where
