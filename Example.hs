@@ -12,6 +12,8 @@
   #-}
 module Example where
 
+import Data.Kind
+
 import DSL.Instruction
 import DSL.Program
 import DSL.Program.InterpreterG
@@ -19,7 +21,7 @@ import DSL.Program.InterpreterG
 import DSL.Program.Derive
 
 -- | Some arithmetic operations
-data ArithOp (p :: * -> *) a where
+data ArithOp (p :: Type -> Type) a where
   Add :: Int -> Int -> ArithOp p Int
   Mul :: Int -> Int -> ArithOp p Int
 -- promote arithmetic operations to program instructions
@@ -35,7 +37,7 @@ instance MapProgram ArithOp where
 
 
 -- | Some IO operations
-data IOOp (p :: * -> *) a where
+data IOOp (p :: Type -> Type) a where
   GetInt :: IOOp p Int
   PutInt :: Int -> IOOp p ()
 -- promote io operations to program instructions
@@ -50,7 +52,7 @@ instance MapProgram IOOp where
     PutInt x -> PutInt x
 
 -- | Some nonsense operations
-data FooOp (p :: * -> *) a where
+data FooOp (p :: Type -> Type) a where
   Foo :: FooOp p ()
   Bar :: FooOp p ()
   Baz :: FooOp p ()
@@ -200,7 +202,7 @@ testExample2 = interpretUsing interpreter2 reducer exProgram
         self = Self $ interpretUsing interpreter2 reducer
 
 -- | An empty instruction type
-data EmptyInst (p :: * -> *) a
+data EmptyInst (p :: Type -> Type) a
 
 -- | An empty interpreter
 exEmptyInterpreter :: InterpreterSelf EmptyInst IO
