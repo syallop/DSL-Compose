@@ -69,7 +69,7 @@ deriveInjections tName = do
 -- injection functions from?
 --
 -- => It must be a GADT.
-validDeclaration :: Info -> Q (Cxt,Name,[TyVarBndr],[Con])
+validDeclaration :: Info -> Q (Cxt,Name,[TyVarBndr ()],[Con])
 validDeclaration (TyConI (DataD dCtx dName dTyVars _dKy dCons _dDeriving)) = return (dCtx,dName,dTyVars,dCons)
 validDeclaration _ = fail "Non GADT types not supported"
 
@@ -111,8 +111,8 @@ generateInjectionFunction instrSetInfo instrInfo = do
     --         => {instrParams} -> ProgramUsingIn {instrName} {compInstrName} {_instrReturn}
     injTypeTerminate <- [t| ProgramUsingIn $(instrType) $(return compInstrType) $(retType) |]
     retTypeActuated  <- retType
-    let injQuantifiers =  (PlainTV $ _instrReturnTyVar $ _instrSetQuantifiers instrSetInfo)
-                         : (PlainTV $ compInstrName)
+    let injQuantifiers =  (PlainTV (_instrReturnTyVar $ _instrSetQuantifiers instrSetInfo) SpecifiedSpec)
+                         : (PlainTV compInstrName SpecifiedSpec)
                          : (_instrQuantifiers instrInfo)
 
         -- Sometime we need to add an a~instrReturn type to the ctx. It shouldnt

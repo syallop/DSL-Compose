@@ -170,6 +170,37 @@ exInterpreter2 = exFooInterpreter
                & exBarInterpreter
 ```
 
+## Testing
+There are no automated tests, however there are three interpreters in Example.hs
+testing:
+- interpreter1: interpreters composed in the same order as the program
+- interpreter2: interpreters composed in a different order as the program
+- interpreter3: interpreters composed in a different order, including an
+  extraneous interpreter
+
+This file loading in the first place is strong proof that:
+- The derivation functionality is working
+- Interpreter composition is working
+
+Execute like:
+```
+> stack ghci
+> testExample1
+```
+Then entering:
+```
+> 1
+> 2
+> 3
+```
+Should produce:
+
+```
+Foo
+Bar
+Baz
+```
+
 ## Citations
 1. Wouter Swierstra - “Data Types a` la Carte, Journal of Functional Programming”
 2. Josef Svenningsson,Bo Joel Svensson - “Simple and Compositional Reification of Monadic Embedded Languages”

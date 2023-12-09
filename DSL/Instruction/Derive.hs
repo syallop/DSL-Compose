@@ -33,26 +33,26 @@ data InstrTyVars = InstrTyVars
 --
 -- Succeeds only with two type variables kinded:
 -- (prog :: * -> *) (ret :: *)
-extractInstrTyVars :: [TyVarBndr] -> Q InstrTyVars
+extractInstrTyVars :: [TyVarBndr ()] -> Q InstrTyVars
 extractInstrTyVars [prog,ret]
     | not $ validProgramTyVar = fail "Program TyVar (first type) must have kind (* -> *)"
     | not $ validReturnTyVar  = fail "Return TyVar (second type) must have kind *"
     | otherwise = return $ InstrTyVars (tyVarBndrName prog) (tyVarBndrName ret)
   where
     validReturnTyVar = case ret of
-      PlainTV  _name       -> True
-      KindedTV _name StarT -> True
+      PlainTV  _name () -> True
+      KindedTV _name () StarT -> True
       _                   -> False
 
     validProgramTyVar = case prog of
-      KindedTV _name (AppT (AppT ArrowT StarT) StarT)
+      KindedTV _name () (AppT (AppT ArrowT StarT) StarT)
         -> True
 
       _ -> False
 
     tyVarBndrName t = case t of
-      PlainTV  n   -> n
-      KindedTV n _ -> n
+      PlainTV  n _  -> n
+      KindedTV n _ _ -> n
 extractInstrTyVars _ = fail "instruction set must be kinded '(* -> *) -> * -> *'"
 
 
@@ -66,7 +66,7 @@ data InstrSetInfo = InstrSetInfo
 
 -- | Given an instruction sets context, type-name, and type variables
 -- , try and extract a vali InstrSetInfo in Q.
-extractInstrSetInfo :: Cxt -> Name -> [TyVarBndr] -> Q InstrSetInfo
+extractInstrSetInfo :: Cxt -> Name -> [TyVarBndr ()] -> Q InstrSetInfo
 extractInstrSetInfo ctx name quantifiers = do
   instrQuantifiers <- extractInstrTyVars quantifiers
   return $ InstrSetInfo ctx name instrQuantifiers
@@ -78,7 +78,7 @@ extractInstrSetInfo ctx name quantifiers = do
 -- Name :: forall TVARS. CTX => TPARAMS -> InstrSetName INSTRSETTVARS
 data InstrInfo = InstrInfo
   {_instrName        :: Name        -- {Name} :: forall TVARS. CXT => TPARAMS -> InstrSetName INSTRSETTVARS
-  ,_instrQuantifiers :: [TyVarBndr] -- Name :: forall {TVARS}. CXT => TPARAMS -> InstrSetName INSTRSETTVARS
+  ,_instrQuantifiers :: [TyVarBndr Specificity] -- Name :: forall {TVARS}. CXT => TPARAMS -> InstrSetName INSTRSETTVARS
   ,_instrCtx         :: Cxt         -- Name :: forall TVARS. {CXT} => TPARAMS -> InstrSetName INSTRSETTVARS
   ,_instrParams      :: [Type]      -- Name :: forall TVARS. CXT => {TPARAMS} -> InstrSetName INSTRSETTVARS
   ,_instrResultType  :: Type        -- Name :: forall TVARS. CTX => TPARAMS -> InstrSetName p {RESULTTYPE}
