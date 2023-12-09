@@ -201,6 +201,8 @@ Bar
 Baz
 ```
 
+Derived code can be inspected like `stack build --ghc-options -ddump-splices`
+
 ## Citations
 1. Wouter Swierstra - “Data Types a` la Carte, Journal of Functional Programming”
 2. Josef Svenningsson,Bo Joel Svensson - “Simple and Compositional Reification of Monadic Embedded Languages”
